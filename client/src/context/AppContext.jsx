@@ -72,7 +72,14 @@ export const AppProvider = ({ children }) => {
         if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
           const statsJson = await statsRes.value.json();
           if (statsJson.success && statsJson.data) {
-            setStats(statsJson.data);
+            const d = statsJson.data;
+            setStats(prev => ({
+              ...prev,
+              ...d,
+              totalCo2SavedKg: d.completedMetrics?.verifiedCo2SavedKg ?? d.totalCo2SavedKg ?? prev.totalCo2SavedKg,
+              totalDollarsSaved: d.completedMetrics?.actualDollarsSaved ?? d.totalDollarsSaved ?? prev.totalDollarsSaved,
+              freeItemsAvailable: d.catalogStatus?.currentlyAvailableListings ?? d.freeItemsAvailable ?? prev.freeItemsAvailable,
+            }));
           }
         }
       } catch (err) {

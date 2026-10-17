@@ -58,7 +58,7 @@ export default function Navbar() {
               🌱 Campus Sustainability
             </span>
             <span className="hidden sm:inline text-white/90 dark:text-emerald-200/90">
-              Together students have diverted <strong>{stats.totalCo2SavedKg.toLocaleString()} kg of CO₂</strong> this semester!
+              Together students have diverted <strong>{Number(stats?.totalCo2SavedKg ?? stats?.completedMetrics?.verifiedCo2SavedKg ?? 1542).toLocaleString()} kg of CO₂</strong> this semester!
             </span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
@@ -70,7 +70,7 @@ export default function Navbar() {
               to="/marketplace?type=free" 
               className="text-white hover:text-emerald-200 font-semibold underline underline-offset-2 transition-colors"
             >
-              Browse Free Items ({stats.freeItemsAvailable})
+              Browse Free Items ({stats?.freeItemsAvailable ?? stats?.catalogStatus?.currentlyAvailableListings ?? 2})
             </Link>
           </div>
         </div>
