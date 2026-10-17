@@ -8,12 +8,14 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
-    "test": "node tests/auth.test.js && node tests/marketplace.test.js && node tests/exchange.test.js && node tests/circularSwap.test.js",
+    "test": "node tests/auth.test.js && node tests/marketplace.test.js && node tests/exchange.test.js && node tests/circularSwap.test.js && node tests/e2eJourneys.test.js",
     "test:auth": "node tests/auth.test.js",
     "test:marketplace": "node tests/marketplace.test.js",
     "test:exchange": "node tests/exchange.test.js",
-    "test:circular": "node tests/circularSwap.test.js"
+    "test:circular": "node tests/circularSwap.test.js",
+    "test:e2e": "node tests/e2eJourneys.test.js"
   },
+
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
