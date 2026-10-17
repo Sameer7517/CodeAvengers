@@ -1,7 +1,7 @@
 # CodeAvengers — CampusLoop: Collegiate Circular Exchange & Reuse Marketplace
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-success?logo=vercel&style=for-the-badge)](https://code-avengers.vercel.app/)
-[![Demo Video](https://img.shields.io/badge/Demo-Video%20Walkthrough-red?logo=youtube&style=for-the-badge)](#-video-demonstration-link)
+[![Demo Video]([https://img.shields.io/badge/Demo-Video%20Walkthrough-red?logo=youtube&style=for-the-badge)](#-video-demonstration-link](https://drive.google.com/file/d/1yl1rUeaPMFRdlRxAAAbwrsfSAajeylsJ/view?pli=1))
 [![GitHub Repository](https://img.shields.io/badge/GitHub-CodeAvengers-blue?logo=github&style=for-the-badge)](https://github.com/Sameer7517/CodeAvengers)
 [![Tests](https://img.shields.io/badge/Automated%20Tests-126%2F126%20Passed-brightgreen?style=for-the-badge)](file:///d:/OneDrive/Desktop/CampusLoop/server/tests)
 
