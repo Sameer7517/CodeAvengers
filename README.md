@@ -203,16 +203,17 @@ npm run dev:client
 CampusLoop includes comprehensive end-to-end automated test suites for backend authentication, security, marketplace discovery, and listing lifecycle management:
 
 ```powershell
-# Run all server tests (Auth + Marketplace Discovery):
+# Run all server tests (Auth + Marketplace Discovery + Phase 4 Exchanges & Workflows):
 npm run test:server
 
 # Or run individual test suites from the server folder:
 cd server
 npm run test:auth          # 23 Authentication & JWT assertions
 npm run test:marketplace   # 30 Marketplace & Discovery assertions
+npm run test:exchange      # 24 Exchange Requests, Workflows & Concurrency assertions
 ```
 
-### Complete Test Suite Coverage (53 Assertions Total):
+### Complete Test Suite Coverage (77 Assertions Total):
 
 #### 1. Authentication & Security (23 Assertions):
 - [x] Health endpoint status check (`GET /api/health`)
@@ -249,6 +250,30 @@ npm run test:marketplace   # 30 Marketplace & Discovery assertions
 - [x] Full-text search across titles, descriptions, and course tags
 - [x] Price range filtering (`minPrice`, `maxPrice`) for Sell listings
 
+#### 3. Phase 4 Exchange Requests, Donations & Concurrency (24 Assertions):
+- [x] Created 3 distinct student accounts for multi-student workflow testing
+- [x] Prevent self-requests on own listings (`400 Bad Request` with `SELF_REQUEST_FORBIDDEN`)
+- [x] Swap request requires offering an available item (`400 Bad Request` with `OFFERED_ITEM_REQUIRED`)
+- [x] Offering an item not owned by requester returns `403 Forbidden` (`NOT_OFFERED_ITEM_OWNER`)
+- [x] Valid swap proposal creation returns `201 Created`
+- [x] Duplicate active request prevention returns `409 Conflict` (`DUPLICATE_ACTIVE_REQUEST`)
+- [x] Give Away request without offered item returns `201 Created`
+- [x] Sell inquiry meetup request returns `201 Created` (without fake payment claim)
+- [x] Requester can cancel pending request (`PATCH /api/exchanges/:id/cancel`)
+- [x] Non-requester cancelling request rejected with `403 Forbidden`
+- [x] Non-owner accepting request rejected with `403 Forbidden`
+- [x] Owner accepts swap request: status becomes `accepted`
+- [x] Accepting swap request consistently reserves **both target and offered listings** (`status: 'reserved'`)
+- [x] Simultaneous conflicting reservation blocked when item is already reserved (`409 Conflict` with `LISTING_ALREADY_RESERVED`)
+- [x] Request creation on reserved item rejected (`400 Bad Request` with `ITEM_UNAVAILABLE`)
+- [x] Owner can decline pending request with optional polite reason (`PATCH /api/exchanges/:id/reject`)
+- [x] Handover confirmation & completion marks request as `completed` (`PATCH /api/exchanges/:id/complete`)
+- [x] Completed exchange updates associated listings to `completed` and awards +50 Eco-Karma
+- [x] Fetch incoming proposals for owner returns filtered list (`GET /api/exchanges?role=incoming`)
+- [x] Fetch outgoing requests for requester returns filtered list (`GET /api/exchanges?role=outgoing`)
+- [x] In-app notifications automatically dispatched to student for all lifecycle events (`GET /api/notifications`)
+- [x] Mark notification as read updates status (`PATCH /api/notifications/:id/read`)
+
 ---
 
 ## 📡 Complete API Endpoint Reference
@@ -274,6 +299,24 @@ npm run test:marketplace   # 30 Marketplace & Discovery assertions
 | `DELETE` | `/api/listings/:id` | **Yes (Owner Only)** | Delete item listing (enforces owner `403 Forbidden` check) |
 | `POST` | `/api/listings/:id/request-exchange` | Optional / Bearer | Submit meetup proposal (rejected if item is reserved or completed) |
 | `GET` | `/api/listings/categories` | No | Category metadata with environmental offset metrics |
+
+### Exchange Requests & Workflows (`/api/exchanges`) — Phase 4
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/exchanges` | **Yes (Bearer JWT)** | Submit new proposal: Swap (with offered item), Give Away (free item claim), or Sell (cash inquiry) |
+| `GET` | `/api/exchanges` | **Yes (Bearer JWT)** | List user exchange requests (supports `?role=incoming\|outgoing\|all&status=pending\|accepted...`) |
+| `GET` | `/api/exchanges/:id` | **Yes (Party Only)** | Get request details, status history, and handover confirmation state |
+| `PATCH` | `/api/exchanges/:id/accept` | **Yes (Owner Only)** | Accept proposal; reserves target item and offered swap item consistently |
+| `PATCH` | `/api/exchanges/:id/reject` | **Yes (Owner Only)** | Decline proposal with optional reason (notifies requester) |
+| `PATCH` | `/api/exchanges/:id/cancel` | **Yes (Requester Only)**| Cancel pending proposal |
+| `PATCH` | `/api/exchanges/:id/complete` | **Yes (Party Only)** | Confirm handover; marks request & listings `completed`, awards +50 Eco-Karma |
+
+### In-App Student Notifications (`/api/notifications`) — Phase 4
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/notifications` | **Yes (Bearer JWT)** | Fetch persistent student notifications and unread count |
+| `PATCH` | `/api/notifications/:id/read` | **Yes (Bearer JWT)** | Mark specific notification as read |
+| `PATCH` | `/api/notifications/read-all` | **Yes (Bearer JWT)** | Mark all student notifications as read |
 
 ### System & Impact Routes
 | Method | Endpoint | Auth Required | Description |
