@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { checkCollegeDomain } from '../models/User.js';
+import { generateInitialsAvatar } from '../utils/avatar.js';
 
 /**
  * Resilient In-Memory User Store
@@ -79,8 +80,8 @@ class InMemoryUserStore {
         password: hashedPassword,
         department: 'Automobile Engineering',
         year: 'Freshman (1st Year)',
-        campus: 'VJTI, Mumbai',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+        campus: "PVG's COET, Pune",
+        avatar: generateInitialsAvatar('Omkar Salunkhe'),
         karmaScore: 50,
         itemsReused: 0,
         co2DivertedKg: 0,
@@ -167,7 +168,7 @@ class InMemoryUserStore {
       department: userData.department || 'General Studies',
       year: userData.year || 'Junior (3rd Year)',
       campus: userData.campus || 'Main Campus',
-      avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      avatar: userData.avatar || generateInitialsAvatar(userData.name),
       karmaScore: 100,
       itemsReused: 0,
       co2DivertedKg: 0,

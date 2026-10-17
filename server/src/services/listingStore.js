@@ -2,6 +2,7 @@ import { SAMPLE_LISTINGS } from '../data/sampleListings.js';
 import { CATEGORIES } from '../data/categories.js';
 import { Listing } from '../models/Listing.js';
 import { isDatabaseConnected } from '../config/db.js';
+import { generateInitialsAvatar } from '../utils/avatar.js';
 
 class ListingStore {
   constructor() {
@@ -226,12 +227,42 @@ class ListingStore {
     if (isDatabaseConnected()) {
       try {
         const item = await Listing.findById(id).populate('owner', 'name email department year campus avatar karmaScore isCollegeVerified');
-        if (item) return item.toJSON();
+        if (item) {
+          const json = item.toJSON();
+          if (!json.seller && json.owner && typeof json.owner === 'object') {
+            json.seller = {
+              id: json.owner._id?.toString() || json.owner.id,
+              name: json.owner.name,
+              department: json.owner.department,
+              year: json.owner.year,
+              campus: json.owner.campus,
+              avatar: json.owner.avatar || generateInitialsAvatar(json.owner.name),
+              karmaScore: json.owner.karmaScore,
+              isCollegeVerified: json.owner.isCollegeVerified,
+              verifiedStudent: json.owner.isCollegeVerified
+            };
+          }
+          return json;
+        }
       } catch (err) {
         // ID may be custom string format in tests
       }
     }
-    return this.memoryListings.find(item => item.id === id || item._id?.toString() === id) || null;
+    const memItem = this.memoryListings.find(item => 
+      item.id === id || 
+      item._id?.toString() === id || 
+      String(item.id) === String(id) || 
+      String(item._id) === String(id)
+    );
+    if (memItem) {
+      if (!memItem.seller && memItem.owner) {
+        memItem.seller = typeof memItem.owner === 'object' 
+          ? memItem.owner 
+          : { name: 'Campus Student', avatar: generateInitialsAvatar('Campus Student') };
+      }
+      return memItem;
+    }
+    return null;
   }
 
   /**
@@ -281,7 +312,7 @@ class ListingStore {
       department: user.department || 'General Studies',
       year: user.year || 'Junior',
       campus: user.campus || 'Main Campus',
-      avatar: user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      avatar: user.avatar || generateInitialsAvatar(user.name),
       karmaScore: user.karmaScore || 100,
       itemsReused: user.itemsReused || 0,
       isCollegeVerified: !!user.isCollegeVerified,

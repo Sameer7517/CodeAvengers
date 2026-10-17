@@ -36,9 +36,9 @@ export default function CreateListingPage() {
     desiredItems: '',
     condition: 'Like New',
     description: '',
-    campus: 'COEP Technological University, Pune',
-    campusSpot: 'Central Reading Hall (2nd Floor)',
-    building: 'COEP Main Library',
+    campus: user?.campus || "PVG's COET, Pune",
+    campusSpot: 'Central Reading Hall (Ground Floor)',
+    building: "PVG's COET Main Building",
     imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
     tags: ''
   });
@@ -512,7 +512,49 @@ export default function CreateListingPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[var(--color-text)] uppercase tracking-wider mb-1.5">
+                  College / Campus
+                </label>
+                <select
+                  value={formData.campus}
+                  onChange={(e) => {
+                    const c = e.target.value;
+                    let defaultBld = formData.building;
+                    let defaultSpot = formData.campusSpot;
+                    if (c === "PVG's COET, Pune") {
+                      defaultBld = "PVG's COET Main Building";
+                      defaultSpot = "Central Reading Hall (Ground Floor)";
+                    } else if (c === "COEP Technological University, Pune") {
+                      defaultBld = "COEP Main Library";
+                      defaultSpot = "Central Reading Hall (2nd Floor)";
+                    } else if (c === "VJTI, Mumbai") {
+                      defaultBld = "VJTI Main Quadrangle";
+                      defaultSpot = "Main Quadrangle Portico";
+                    } else if (c === "PICT, Pune") {
+                      defaultBld = "PICT Central Campus";
+                      defaultSpot = "Student Center Lobby";
+                    } else if (c === "SPPU, Pune") {
+                      defaultBld = "SPPU Jayakar Library";
+                      defaultSpot = "Jayakar Library 1st Floor";
+                    } else if (c === "Walchand College of Engineering, Sangli") {
+                      defaultBld = "WCE Administrative Building";
+                      defaultSpot = "Admin Porch & Reading Room";
+                    }
+                    setFormData({ ...formData, campus: c, building: defaultBld, campusSpot: defaultSpot });
+                  }}
+                  className="w-full px-4 py-3 glass-panel border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] focus:outline-hidden font-medium cursor-pointer"
+                >
+                  <option value="PVG's COET, Pune">PVG's COET, Pune</option>
+                  <option value="COEP Technological University, Pune">COEP Technological University, Pune</option>
+                  <option value="VJTI, Mumbai">VJTI, Mumbai</option>
+                  <option value="PICT, Pune">PICT, Pune</option>
+                  <option value="SPPU, Pune">SPPU, Pune</option>
+                  <option value="Walchand College of Engineering, Sangli">Walchand College of Engineering (WCE), Sangli</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-[var(--color-text)] uppercase tracking-wider mb-1.5">
                   Designated Campus Building
@@ -522,6 +564,7 @@ export default function CreateListingPage() {
                   onChange={(e) => setFormData({ ...formData, building: e.target.value })}
                   className="w-full px-4 py-3 glass-panel border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] focus:outline-hidden font-medium cursor-pointer"
                 >
+                  <option value="PVG's COET Main Building">PVG's COET Main Building & Reading Hall (Pune)</option>
                   <option value="COEP Main Library">COEP Central Reading Hall (Pune)</option>
                   <option value="VJTI Main Quadrangle">VJTI Main Quadrangle (Mumbai)</option>
                   <option value="PICT Central Campus">PICT Student Center (Pune)</option>

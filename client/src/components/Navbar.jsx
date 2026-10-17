@@ -18,6 +18,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { generateInitialsAvatar } from '../utils/avatar';
 import ThemeSelector from './ThemeSelector';
 
 export default function Navbar() {
@@ -303,7 +304,7 @@ export default function Navbar() {
                   title="View Profile & Dashboard"
                 >
                   <img
-                    src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
+                    src={user.avatar || generateInitialsAvatar(user.name)}
                     alt={user.name}
                     className="w-8 h-8 rounded-full object-cover border border-[#176B4D]/30 dark:border-[#72D6A2]/40"
                   />

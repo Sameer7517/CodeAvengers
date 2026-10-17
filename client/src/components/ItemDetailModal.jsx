@@ -17,6 +17,7 @@ import {
   Loader2 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { generateInitialsAvatar } from '../utils/avatar';
 
 export default function ItemDetailModal() {
   const { 
@@ -38,28 +39,45 @@ export default function ItemDetailModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  if (!selectedItemForModal) return null;
-  const item = selectedItemForModal;
-  const isSaved = savedItemIds.includes(item.id);
-  const isAvailable = (item.status || 'available') === 'available';
-  const isSwap = item.listingType === 'swap' || item.listingType === 'trade';
-  const isGiveaway = item.listingType === 'giveaway' || item.listingType === 'free';
-
-  // User's own available items for offering in swap
+  // User's own available items for offering in swap (safe check before conditional return)
   const myAvailableItems = listings.filter((l) => {
     if (!user) return false;
     const userId = (user._id || user.id || '').toString();
     const ownerId = (l.owner?._id || l.owner || l.seller?.id || '').toString();
     const isOwner = (ownerId && ownerId === userId) || (l.seller?.name && user.name && l.seller.name.toLowerCase() === user.name.toLowerCase());
-    return isOwner && (l.status || 'available') === 'available' && l.id !== item.id;
+    const isCurrent = selectedItemForModal && (l.id === selectedItemForModal.id || l._id === selectedItemForModal._id);
+    return isOwner && (l.status || 'available') === 'available' && !isCurrent;
   });
 
-  // Set default offered item if swap
+  // Reset modal interactions and select default offered item when opened
+  useEffect(() => {
+    if (selectedItemForModal) {
+      setRequestSent(false);
+      setErrorMessage('');
+      setMeetingNote('');
+      if (myAvailableItems.length > 0) {
+        setSelectedOfferedItemId(myAvailableItems[0].id || myAvailableItems[0]._id);
+      }
+    }
+  }, [selectedItemForModal]);
+
+  // Set default offered item if swap list loads or changes
   useEffect(() => {
     if (myAvailableItems.length > 0 && !selectedOfferedItemId) {
-      setSelectedOfferedItemId(myAvailableItems[0].id);
+      setSelectedOfferedItemId(myAvailableItems[0].id || myAvailableItems[0]._id);
     }
   }, [myAvailableItems, selectedOfferedItemId]);
+
+  if (!selectedItemForModal) return null;
+  const item = selectedItemForModal;
+  const itemId = item.id || item._id;
+  const isSaved = savedItemIds.includes(item.id) || savedItemIds.includes(item._id);
+  const isAvailable = (item.status || 'available') === 'available';
+  const isSwap = item.listingType === 'swap' || item.listingType === 'trade';
+  const isGiveaway = item.listingType === 'giveaway' || item.listingType === 'free';
+  const seller = item.seller || (typeof item.owner === 'object' ? item.owner : null) || {};
+  const sellerName = seller.name || 'Campus Student';
+  const sellerAvatar = seller.avatar || generateInitialsAvatar(sellerName);
 
   const isOwner = Boolean(
     user && (
@@ -309,23 +327,23 @@ export default function ItemDetailModal() {
               <div className="glass-panel border border-[var(--color-border)] p-3 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
-                    src={item.seller?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-                    alt={item.seller?.name || 'Seller'}
+                    src={sellerAvatar}
+                    alt={sellerName}
                     className="w-9 h-9 rounded-full object-cover border border-[#176B4D]/30"
                   />
                   <div>
                     <div className="flex items-center gap-1">
-                      <span className="font-bold text-[var(--color-text)] text-xs">{item.seller?.name || 'Campus Student'}</span>
-                      {(item.seller?.verifiedStudent || item.seller?.isCollegeVerified) && (
+                      <span className="font-bold text-[var(--color-text)] text-xs">{sellerName}</span>
+                      {(seller.verifiedStudent || seller.isCollegeVerified) && (
                         <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                       )}
                     </div>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">{item.seller?.department || 'Student'}</p>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">{seller.department || item.campus || 'Student'}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-bold text-[#176B4D] dark:text-[#72D6A2] block">
-                    {item.seller?.karmaScore || 350} Karma
+                    {seller.karmaScore || 100} Karma
                   </span>
                 </div>
               </div>
@@ -450,7 +468,7 @@ export default function ItemDetailModal() {
 
                   <div className="flex gap-2">
                     <Link
-                      to={`/item/${item.id}`}
+                      to={`/item/${itemId}`}
                       onClick={() => setSelectedItemForModal(null)}
                       className="px-3 py-2 rounded-xl text-xs font-bold border border-[var(--color-border)] text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                     >

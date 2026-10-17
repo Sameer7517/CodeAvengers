@@ -9,23 +9,24 @@ import {
   ArrowLeft, 
   Clock, 
   Send, 
-  CheckCircle,
-  Gift,
-  RefreshCw,
-  Sparkles,
-  AlertTriangle,
-  AlertCircle,
-  Loader2,
-  Calendar
+  CheckCircle, 
+  Gift, 
+  RefreshCw, 
+  Sparkles, 
+  AlertTriangle, 
+  AlertCircle, 
+  Loader2, 
+  Calendar 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { generateInitialsAvatar } from '../utils/avatar';
 
 export default function ItemDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { listings, savedItemIds, toggleSave, showToast, user, createExchangeRequest } = useApp();
 
-  const [item, setItem] = useState(() => listings.find((i) => i.id === id) || null);
+  const [item, setItem] = useState(() => listings.find((i) => String(i.id) === String(id) || String(i._id) === String(id)) || null);
   const [loading, setLoading] = useState(!item);
   const [selectedMeetingTime, setSelectedMeetingTime] = useState('Today after 3:00 PM');
   const [selectedSpot, setSelectedSpot] = useState('Main Library 2nd Floor Cafe');
@@ -41,13 +42,14 @@ export default function ItemDetailPage() {
     const userId = (user._id || user.id || '').toString();
     const ownerId = (l.owner?._id || l.owner || l.seller?.id || '').toString();
     const isOwner = (ownerId && ownerId === userId) || (l.seller?.name && user.name && l.seller.name.toLowerCase() === user.name.toLowerCase());
-    return isOwner && (l.status || 'available') === 'available' && l.id !== id;
+    const isCurrent = String(l.id) === String(id) || String(l._id) === String(id);
+    return isOwner && (l.status || 'available') === 'available' && !isCurrent;
   });
 
   // Set default offered item if swap
   useEffect(() => {
     if (myAvailableItems.length > 0 && !selectedOfferedItemId) {
-      setSelectedOfferedItemId(myAvailableItems[0].id);
+      setSelectedOfferedItemId(myAvailableItems[0].id || myAvailableItems[0]._id);
     }
   }, [myAvailableItems, selectedOfferedItemId]);
 
@@ -62,9 +64,19 @@ export default function ItemDetailPage() {
           if (json.success && json.data && isMounted) {
             setItem(json.data);
           }
+        } else {
+          // Fallback to listings in memory if API doesn't find it directly
+          const localItem = listings.find((i) => String(i.id) === String(id) || String(i._id) === String(id));
+          if (localItem && isMounted) {
+            setItem(localItem);
+          }
         }
       } catch (err) {
         console.warn('Could not fetch listing from API:', err);
+        const localItem = listings.find((i) => String(i.id) === String(id) || String(i._id) === String(id));
+        if (localItem && isMounted) {
+          setItem(localItem);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -72,7 +84,7 @@ export default function ItemDetailPage() {
 
     fetchItem();
     return () => { isMounted = false; };
-  }, [id]);
+  }, [id, listings]);
 
   if (loading) {
     return (
@@ -95,16 +107,20 @@ export default function ItemDetailPage() {
     );
   }
 
-  const isSaved = savedItemIds.includes(item.id);
+  const itemId = item.id || item._id;
+  const isSaved = savedItemIds.includes(item.id) || savedItemIds.includes(item._id);
   const isAvailable = (item.status || 'available') === 'available';
   const isSwap = item.listingType === 'swap' || item.listingType === 'trade';
   const isGiveaway = item.listingType === 'giveaway' || item.listingType === 'free';
+  const seller = item.seller || (typeof item.owner === 'object' ? item.owner : null) || {};
+  const sellerName = seller.name || 'Campus Student';
+  const sellerAvatar = seller.avatar || generateInitialsAvatar(sellerName);
 
   const isOwner = Boolean(
     user && (
-      ((user._id || user.id) && (item.owner?._id || item.owner || item.seller?.id) &&
-        String(user._id || user.id) === String(item.owner?._id || item.owner || item.seller?.id)) ||
-      (user.name && item.seller?.name && user.name.toLowerCase() === item.seller.name.toLowerCase())
+      ((user._id || user.id) && (item.owner?._id || item.owner || seller.id) &&
+        String(user._id || user.id) === String(item.owner?._id || item.owner || seller.id)) ||
+      (user.name && sellerName && user.name.toLowerCase() === sellerName.toLowerCase())
     )
   );
 
@@ -135,7 +151,7 @@ export default function ItemDetailPage() {
 
     try {
       await createExchangeRequest({
-        listingId: item.id,
+        listingId: itemId,
         offeredListingId: isSwap ? selectedOfferedItemId : undefined,
         proposedMeetingTime: selectedMeetingTime,
         proposedSpot: selectedSpot,
@@ -280,7 +296,7 @@ export default function ItemDetailPage() {
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => toggleSave(item.id)}
+                    onClick={() => toggleSave(itemId)}
                     className={`p-2 rounded-xl border transition-colors ${
                       isSaved
                         ? 'bg-rose-500/10 border-rose-500/20 text-rose-600'
@@ -342,28 +358,28 @@ export default function ItemDetailPage() {
               <div className="glass-panel border border-[var(--color-border)] p-4 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img
-                    src={item.seller?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-                    alt={item.seller?.name || 'Owner'}
+                    src={sellerAvatar}
+                    alt={sellerName}
                     className="w-11 h-11 rounded-full object-cover border-2 border-[#176B4D]/40"
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-[var(--color-text)] text-sm">{item.seller?.name || 'Campus Student'}</span>
-                      {(item.seller?.verifiedStudent || item.seller?.isCollegeVerified) && (
+                      <span className="font-bold text-[var(--color-text)] text-sm">{sellerName}</span>
+                      {(seller.verifiedStudent || seller.isCollegeVerified) && (
                         <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.2 rounded-full">
                           .edu Verified
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">{item.seller?.department || 'University Student'} · {item.seller?.year || 'Student'}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">{seller.department || item.campus || 'University Student'} · {seller.year || 'Student'}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-bold text-[#176B4D] dark:text-[#72D6A2] block">
-                    {item.seller?.karmaScore || 350} Karma
+                    {seller.karmaScore || 100} Karma
                   </span>
                   <span className="text-[10px] text-[var(--color-text-muted)]">
-                    {item.seller?.itemsReused || 5} items reused
+                    {seller.itemsReused || 0} items reused
                   </span>
                 </div>
               </div>

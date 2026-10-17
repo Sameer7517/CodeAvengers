@@ -27,9 +27,9 @@ export default function AuthPage() {
   const [email, setEmail] = useState('s.rodriguez@campus.edu');
   const [password, setPassword] = useState('CampusLoop2026!');
   const [name, setName] = useState('');
-  const [department, setDepartment] = useState('Environmental Studies');
+  const [department, setDepartment] = useState('Computer Engineering');
   const [year, setYear] = useState('Junior (3rd Year)');
-  const [campus, setCampus] = useState('North Campus');
+  const [campus, setCampus] = useState("PVG's COET, Pune");
   const [pledgeAccepted, setPledgeAccepted] = useState(true);
 
   // Status State
@@ -312,6 +312,24 @@ export default function AuthPage() {
                     <option>Graduate Student</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  College / Engineering Campus *
+                </label>
+                <select
+                  value={campus}
+                  onChange={(e) => setCampus(e.target.value)}
+                  className="w-full px-2.5 py-2 bg-offwhite-100 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-forest-600 font-semibold text-slate-800"
+                >
+                  <option value="PVG's COET, Pune">PVG's COET, Pune (Pune Vidyarthi Griha's COET)</option>
+                  <option value="COEP Technological University, Pune">COEP Technological University, Pune</option>
+                  <option value="VJTI, Mumbai">VJTI, Mumbai</option>
+                  <option value="PICT, Pune">PICT, Pune</option>
+                  <option value="SPPU, Pune">SPPU (Savitribai Phule Pune University), Pune</option>
+                  <option value="Walchand College of Engineering, Sangli">Walchand College of Engineering (WCE), Sangli</option>
+                </select>
               </div>
 
               {/* Sustainability Pledge */}

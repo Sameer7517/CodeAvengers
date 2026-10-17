@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { generateInitialsAvatar } from '../utils/avatar.js';
 
 /**
  * Validates whether an email domain corresponds to an accredited academic/college institution.
@@ -53,7 +54,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+      default: ''
     },
     karmaScore: {
       type: Number,
@@ -124,6 +125,11 @@ userSchema.pre('save', async function () {
       this.verificationMethod = 'none';
       this.verifiedAt = null;
     }
+  }
+
+  // Ensure avatar defaults to initials
+  if (!this.avatar) {
+    this.avatar = generateInitialsAvatar(this.name);
   }
 
   // Hash password if modified

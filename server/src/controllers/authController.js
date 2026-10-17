@@ -3,6 +3,7 @@ import { User, checkCollegeDomain } from '../models/User.js';
 import { generateToken } from '../utils/token.js';
 import { isDatabaseConnected } from '../config/db.js';
 import { inMemoryUserStore } from '../services/inMemoryUserStore.js';
+import { generateInitialsAvatar } from '../utils/avatar.js';
 
 /**
  * Register a new student account
@@ -55,7 +56,8 @@ export const register = async (req, res) => {
         password,
         department: department || 'General Studies',
         year: year || 'Junior (3rd Year)',
-        campus: campus || 'Main Campus',
+        campus: campus || "PVG's COET, Pune",
+        avatar: generateInitialsAvatar(name.trim()),
         isCollegeVerified: isVerified,
         verificationStatus: isVerified ? 'verified' : 'unverified',
         verificationMethod: isVerified ? 'institutional_email' : 'none',
@@ -91,7 +93,8 @@ export const register = async (req, res) => {
         password,
         department,
         year,
-        campus
+        campus: campus || "PVG's COET, Pune",
+        avatar: generateInitialsAvatar(name.trim())
       });
 
       const token = generateToken(user._id, { email: user.email, isCollegeVerified: user.isCollegeVerified });

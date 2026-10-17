@@ -1,10 +1,15 @@
 import React from 'react';
 import { Bookmark, MapPin, ShieldCheck, ArrowRight, RefreshCw, Gift, CheckCircle, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { generateInitialsAvatar } from '../utils/avatar';
 
 export default function ItemCard({ item, onClick }) {
   const { savedItemIds, toggleSave, setSelectedItemForModal } = useApp();
-  const isSaved = savedItemIds.includes(item.id);
+  const itemId = item.id || item._id;
+  const isSaved = savedItemIds.includes(item.id) || savedItemIds.includes(item._id);
+  const seller = item.seller || (typeof item.owner === 'object' ? item.owner : null) || {};
+  const sellerName = seller.name || 'Student';
+  const sellerAvatar = seller.avatar || generateInitialsAvatar(sellerName);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -16,7 +21,7 @@ export default function ItemCard({ item, onClick }) {
 
   const handleSaveClick = (e) => {
     e.stopPropagation();
-    toggleSave(item.id);
+    toggleSave(itemId);
   };
 
   const conditionColors = {
@@ -185,18 +190,18 @@ export default function ItemCard({ item, onClick }) {
         <div className="mt-4 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src={item.seller?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-              alt={item.seller?.name || 'Seller'}
+              src={sellerAvatar}
+              alt={sellerName}
               className="w-6 h-6 rounded-full object-cover border border-[#176B4D]/30"
             />
             <div className="text-[11px] leading-tight">
               <span className="font-semibold text-[var(--color-text)] flex items-center gap-1">
-                {item.seller?.name || 'Student'}
-                {(item.seller?.isCollegeVerified || item.seller?.verifiedStudent) && (
+                {sellerName}
+                {(seller.isCollegeVerified || seller.verifiedStudent) && (
                   <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" title="Verified Campus Student" />
                 )}
               </span>
-              <span className="text-[10px] text-[var(--color-text-muted)] block">{item.seller?.year || 'Student'}</span>
+              <span className="text-[10px] text-[var(--color-text-muted)] block">{seller.year || 'Student'}</span>
             </div>
           </div>
 

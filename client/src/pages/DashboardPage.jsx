@@ -29,6 +29,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { generateInitialsAvatar } from '../utils/avatar';
 import ItemCard from '../components/ItemCard';
 
 export default function DashboardPage() {
@@ -221,7 +222,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <img
-                src={user.avatar}
+                src={user.avatar || generateInitialsAvatar(user.name)}
                 alt={user.name}
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-400 shadow-md"
               />
