@@ -196,51 +196,134 @@ export const AppProvider = ({ children }) => {
   // Create listing linked to authenticated seller
   const addListing = async (newListingData) => {
     const activeToken = token || localStorage.getItem('campusloop_token');
-    try {
-      const headers = { 'Content-Type': 'application/json' };
-      if (activeToken) {
-        headers['Authorization'] = `Bearer ${activeToken}`;
-      }
-
-      const res = await fetch('/api/listings', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(newListingData)
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          setListings(prev => [json.data, ...prev]);
-          showToast(`🌱 "${json.data.title}" posted to CampusLoop! Estimated -${json.data.co2SavedKg}kg CO₂ saved!`, 'success');
-          return json.data;
-        }
-      }
-    } catch (e) {
-      console.warn('Backend request failed, falling back to local state:', e);
+    if (!activeToken) {
+      throw new Error('You must be signed in to list an item on CampusLoop.');
     }
 
-    // Local fallback
-    const created = {
-      id: `item-${Date.now()}`,
-      ...newListingData,
-      createdAt: new Date().toISOString(),
-      viewsCount: 1,
-      seller: {
-        id: user?._id || user?.id || 'usr-current',
-        name: user?.name || 'Student Seller',
-        department: user?.department || 'General Studies',
-        year: user?.year || 'Junior',
-        avatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-        karmaScore: (user?.karmaScore || 100) + 25,
-        itemsReused: (user?.itemsReused || 0) + 1,
-        verifiedStudent: !!user?.isCollegeVerified
-      }
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${activeToken}`
     };
 
-    setListings(prev => [created, ...prev]);
-    showToast(`🌱 Listing posted! Thank you for choosing circular reuse!`, 'success');
-    return created;
+    const res = await fetch('/api/listings', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(newListingData)
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to publish listing. Please check required fields.');
+    }
+
+    setListings(prev => [json.data, ...prev]);
+    showToast(`🌱 "${json.data.title}" posted to CampusLoop! Estimated -${json.data.co2SavedKg}kg CO₂ saved!`, 'success');
+    return json.data;
+  };
+
+  // Update listing details
+  const updateListing = async (id, updateData) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/listings/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify(updateData)
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to update listing.');
+    }
+
+    setListings(prev => prev.map(item => (item.id === id ? json.data : item)));
+    showToast('Listing updated successfully!', 'success');
+    return json.data;
+  };
+
+  // Update listing availability status (available, reserved, completed)
+  const updateListingStatus = async (id, status) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/listings/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ status })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to update listing status.');
+    }
+
+    setListings(prev => prev.map(item => (item.id === id ? json.data : item)));
+    const statusText = status === 'available' ? 'Available' : status === 'reserved' ? 'Reserved' : 'Completed';
+    showToast(`Listing marked as ${statusText}`, 'success');
+    return json.data;
+  };
+
+  // Delete listing (enforced by backend ownership)
+  const deleteListing = async (id) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/listings/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${activeToken}`
+      }
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to delete listing.');
+    }
+
+    setListings(prev => prev.filter(item => item.id !== id));
+    showToast('Listing removed from CampusLoop', 'info');
+    return true;
+  };
+
+  // Request exchange/pickup for an item
+  const requestExchange = async (id, payload) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (activeToken) {
+      headers['Authorization'] = `Bearer ${activeToken}`;
+    }
+
+    const res = await fetch(`/api/listings/${id}/request-exchange`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Could not dispatch exchange request.');
+    }
+
+    showToast('Pickup request dispatched to seller!', 'success');
+    return json;
+  };
+
+  // Fetch filtered listings from backend with pagination
+  const fetchListingsApi = async (params = {}) => {
+    const cleanParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '' && val !== 'all') {
+        cleanParams.append(key, val);
+      }
+    });
+
+    const res = await fetch(`/api/listings?${cleanParams.toString()}`);
+    const json = await res.json();
+    if (res.ok && json.success) {
+      return json;
+    }
+    throw new Error(json.message || 'Failed to fetch listings');
   };
 
   return (
@@ -263,7 +346,12 @@ export const AppProvider = ({ children }) => {
         stats,
         loading,
         showToast,
-        addListing
+        addListing,
+        updateListing,
+        updateListingStatus,
+        deleteListing,
+        requestExchange,
+        fetchListingsApi
       }}
     >
       {children}

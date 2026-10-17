@@ -64,17 +64,21 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server and connect to MongoDB
-const startServer = async () => {
+export const startServer = async () => {
   // Connect to MongoDB
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`🌱 CampusLoop Phase 2 Server running on http://localhost:${PORT}`);
+  return app.listen(PORT, () => {
+    console.log(`🌱 CampusLoop Phase 3 Server running on http://localhost:${PORT}`);
     console.log(`🔒 Authentication & JWT endpoints active at /api/auth`);
+    console.log(`🛍️ Marketplace CRUD & Discovery active at /api/listings`);
     console.log(`💾 Storage: ${isDatabaseConnected() ? 'Persistent MongoDB Mongoose' : 'In-Memory Resilient Repository'}`);
   });
 };
 
-startServer();
+// Only execute listen automatically when run directly as main entry point
+if (process.argv[1]?.endsWith('server.js')) {
+  startServer();
+}
 
 export default app;

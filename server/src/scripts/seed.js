@@ -8,7 +8,7 @@ import { SAMPLE_LISTINGS } from '../data/sampleListings.js';
 dotenv.config();
 
 export const seedDatabase = async () => {
-  console.log('🌱 Starting CampusLoop Database Seeding...');
+  console.log('🌱 Starting CampusLoop Phase 3 Database Seeding...');
 
   const conn = await connectDB();
   if (!conn) {
@@ -27,6 +27,7 @@ export const seedDatabase = async () => {
     
     // Seed Account 1: Samira Rodriguez (.edu Verified Student)
     const samira = await User.create({
+      _id: new mongoose.Types.ObjectId('67b36f1c24e65a001a111111'),
       name: 'Samira Rodriguez',
       email: 's.rodriguez@campus.edu',
       password: 'CampusLoop2026!',
@@ -38,7 +39,7 @@ export const seedDatabase = async () => {
       itemsReused: 8,
       co2DivertedKg: 64.2,
       dollarsSaved: 320,
-      isCollegeVerified: true, // Verified by .edu institutional domain
+      isCollegeVerified: true,
       verificationStatus: 'verified',
       verificationMethod: 'institutional_email',
       verifiedAt: new Date('2026-09-01'),
@@ -51,6 +52,7 @@ export const seedDatabase = async () => {
 
     // Seed Account 2: Maya Lin (.edu Verified Student)
     const maya = await User.create({
+      _id: new mongoose.Types.ObjectId('67b36f1c24e65a001a222222'),
       name: 'Maya Lin',
       email: 'maya.lin@campus.edu',
       password: 'CampusLoop2026!',
@@ -71,8 +73,9 @@ export const seedDatabase = async () => {
       ]
     });
 
-    // Seed Account 3: Guest Student (Unverified - Non-College Domain to test verification logic)
+    // Seed Account 3: Jordan Guest (Unverified Student - non-college domain)
     const guest = await User.create({
+      _id: new mongoose.Types.ObjectId('67b36f1c24e65a001a333333'),
       name: 'Jordan Guest',
       email: 'guest.student@gmail.com',
       password: 'CampusLoop2026!',
@@ -84,7 +87,7 @@ export const seedDatabase = async () => {
       itemsReused: 0,
       co2DivertedKg: 0,
       dollarsSaved: 0,
-      isCollegeVerified: false, // NOT college verified because email domain is gmail.com
+      isCollegeVerified: false,
       verificationStatus: 'unverified',
       verificationMethod: 'none',
       verifiedAt: null,
@@ -97,29 +100,48 @@ export const seedDatabase = async () => {
     console.log(`   - Unverified Student: guest.student@gmail.com (Password: CampusLoop2026!)`);
 
     // 3. Seed Realistic Listings
-    console.log('📦 Seeding campus exchange listings...');
+    console.log('📦 Seeding Phase 3 marketplace listings with ownership & status...');
     const seededListings = SAMPLE_LISTINGS.map(item => {
-      // Reassign to real seeded users
-      const sellerUser = item.seller.name.includes('Maya') ? maya : samira;
+      let ownerId = maya._id;
+      let sellerUser = maya;
+
+      if (item.id === 'item-102' || item.id === 'item-104' || item.id === 'item-106') {
+        ownerId = samira._id;
+        sellerUser = samira;
+      } else if (item.id === 'item-107') {
+        ownerId = guest._id;
+        sellerUser = guest;
+      }
+
+      const priceVal = (item.listingType === 'free' || item.listingType === 'trade' || item.listingType === 'giveaway' || item.listingType === 'swap')
+        ? 0
+        : (item.price || item.sellingPrice || 25);
+
       return {
+        owner: ownerId,
         title: item.title,
         category: item.category,
         listingType: item.listingType,
-        price: item.price,
-        originalPrice: item.originalPrice,
+        desiredItems: item.desiredItems || (item.listingType === 'trade' || item.listingType === 'swap' ? 'Calculus or Bio equipment' : ''),
+        sellingPrice: priceVal,
+        price: priceVal,
+        originalPrice: item.originalPrice || priceVal * 2,
         condition: item.condition,
         co2SavedKg: item.co2SavedKg,
         description: item.description,
-        imageUrl: item.imageUrl,
+        images: item.images || [item.imageUrl],
+        campus: item.campus || sellerUser.campus || 'Main Campus',
         tags: item.tags,
         seller: {
           id: sellerUser._id.toString(),
           name: sellerUser.name,
           department: sellerUser.department,
           year: sellerUser.year,
+          campus: sellerUser.campus,
           avatar: sellerUser.avatar,
           karmaScore: sellerUser.karmaScore,
           itemsReused: sellerUser.itemsReused,
+          isCollegeVerified: sellerUser.isCollegeVerified,
           verifiedStudent: sellerUser.isCollegeVerified
         },
         location: item.location,
@@ -129,9 +151,9 @@ export const seedDatabase = async () => {
     });
 
     await Listing.insertMany(seededListings);
-    console.log(`✅ Seeded ${seededListings.length} realistic campus exchange listings!`);
+    console.log(`✅ Seeded ${seededListings.length} marketplace listings with status and desired swap items!`);
 
-    console.log('\n✨ Database seeding completed successfully!');
+    console.log('\n✨ Phase 3 Database seeding completed successfully!');
   } catch (err) {
     console.error('❌ Seeding failed:', err);
   } finally {

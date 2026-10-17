@@ -15,16 +15,19 @@ import {
   CheckCircle2, 
   Sparkles, 
   ExternalLink,
-  Calendar
+  Calendar,
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import ItemCard from '../components/ItemCard';
 
 export default function DashboardPage() {
-  const { user, listings, savedItemIds, verifyCollege, showToast } = useApp();
+  const { user, listings, savedItemIds, verifyCollege, showToast, updateListingStatus, deleteListing } = useApp();
   const [activeTab, setActiveTab] = useState('listings'); // 'listings' | 'saved' | 'messages' | 'impact'
   const [studentIdInput, setStudentIdInput] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const handleVerifyStudent = async (e) => {
     e.preventDefault();
@@ -40,10 +43,43 @@ export default function DashboardPage() {
     }
   };
 
-  // User's active listings
-  const myListings = listings.filter(
-    (item) => item.seller?.name === user?.name || item.seller?.id === user?.id
-  );
+  // User's active listings (checks owner ID, seller ID, and seller name)
+  const myListings = listings.filter((item) => {
+    if (!user) return false;
+    const userId = user._id || user.id;
+    const ownerId = item.owner?._id || item.owner;
+    const sellerId = item.seller?.id || item.seller?._id;
+    const sellerName = item.seller?.name;
+    return (
+      (ownerId && String(ownerId) === String(userId)) ||
+      (sellerId && String(sellerId) === String(userId)) ||
+      (sellerName && user.name && sellerName.toLowerCase() === user.name.toLowerCase())
+    );
+  });
+
+  const handleStatusChange = async (itemId, newStatus) => {
+    setActionLoadingId(itemId);
+    try {
+      await updateListingStatus(itemId, newStatus);
+    } catch (err) {
+      showToast(err.message || 'Could not update status', 'error');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteListing = async (itemId, itemTitle) => {
+    if (window.confirm(`Are you sure you want to delete "${itemTitle}"? This cannot be undone.`)) {
+      setActionLoadingId(itemId);
+      try {
+        await deleteListing(itemId);
+      } catch (err) {
+        showToast(err.message || 'Could not delete listing', 'error');
+      } finally {
+        setActionLoadingId(null);
+      }
+    }
+  };
 
   // User's bookmarked listings
   const savedListings = listings.filter((item) => savedItemIds.includes(item.id));
@@ -302,7 +338,35 @@ export default function DashboardPage() {
           {myListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {myListings.map((item) => (
-                <ItemCard key={item.id} item={item} />
+                <div key={item.id} className="flex flex-col">
+                  <ItemCard item={item} />
+                  {/* Owner Listing Management Controls */}
+                  <div className="mt-2 bg-white rounded-xl border border-slate-200 p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Status:</span>
+                      <select
+                        value={item.status || 'available'}
+                        disabled={actionLoadingId === item.id}
+                        onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                        className="text-xs font-semibold py-1 px-2 rounded-lg border border-slate-200 bg-offwhite-100 focus:outline-hidden focus:border-forest-600 cursor-pointer"
+                      >
+                        <option value="available">🟢 Available</option>
+                        <option value="reserved">🟡 Reserved</option>
+                        <option value="completed">⚪ Completed</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteListing(item.id, item.title)}
+                      disabled={actionLoadingId === item.id}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      title="Delete Listing"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (

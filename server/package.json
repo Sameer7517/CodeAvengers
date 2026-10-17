@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
-    "test": "node tests/auth.test.js"
+    "test": "node tests/auth.test.js && node tests/marketplace.test.js",
+    "test:auth": "node tests/auth.test.js",
+    "test:marketplace": "node tests/marketplace.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

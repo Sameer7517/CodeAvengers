@@ -226,15 +226,13 @@ const runTests = async () => {
     });
     assert(logoutRes.status === 200, 'Logout endpoint returns 200 OK');
 
-  } catch (error) {
-    console.error('❌ Test suite unexpected execution error:', error);
-    totalFailed++;
   } finally {
-    server.close();
     console.log('\n========================================================');
     console.log(`📊 Test Summary: ${totalPassed} Passed, ${totalFailed} Failed`);
     console.log('========================================================\n');
-    process.exit(totalFailed > 0 ? 1 : 0);
+    server.close(() => {
+      process.exit(totalFailed > 0 ? 1 : 0);
+    });
   }
 };
 

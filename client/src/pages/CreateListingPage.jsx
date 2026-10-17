@@ -20,7 +20,7 @@ import {
 import { useApp } from '../context/AppContext';
 
 export default function CreateListingPage() {
-  const { addListing, user } = useApp();
+  const { addListing, user, token } = useApp();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -29,8 +29,10 @@ export default function CreateListingPage() {
     listingType: 'sell',
     price: '',
     originalPrice: '',
+    desiredItems: '',
     condition: 'Like New',
     description: '',
+    campus: 'UMass Amherst',
     campusSpot: 'Main Library 2nd Floor Cafe',
     building: 'W.E.B. Du Bois Library',
     imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
@@ -38,6 +40,7 @@ export default function CreateListingPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   // Preset images for realistic demo creation
   const demoImages = [
@@ -62,31 +65,66 @@ export default function CreateListingPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
+    setError('');
+
+    // Form validations
+    if (formData.title.trim().length < 3) {
+      setError('Listing title must be at least 3 characters.');
+      return;
+    }
+
+    if (formData.description.trim().length < 10) {
+      setError('Please provide an item description of at least 10 characters.');
+      return;
+    }
+
+    const typeNormalized = formData.listingType === 'free' ? 'giveaway' : formData.listingType === 'trade' ? 'swap' : 'sell';
+
+    if (typeNormalized === 'sell') {
+      const priceVal = Number(formData.price);
+      if (!priceVal || priceVal <= 0) {
+        setError('Please enter a valid price greater than $0 for sell listings.');
+        return;
+      }
+    }
+
+    if (typeNormalized === 'swap' && !formData.desiredItems.trim()) {
+      setError('Please specify the desired items or course gear you would like to swap for.');
+      return;
+    }
 
     setIsSubmitting(true);
 
-    const newListing = {
-      title: formData.title,
-      category: formData.category,
-      listingType: formData.listingType,
-      price: formData.listingType === 'free' ? 0 : Number(formData.price) || 0,
-      originalPrice: Number(formData.originalPrice) || (Number(formData.price) ? Number(formData.price) * 2 : 50),
-      condition: formData.condition,
-      co2SavedKg: estimatedCo2,
-      description: formData.description,
-      imageUrl: formData.imageUrl,
-      tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [formData.category],
-      location: {
-        campusSpot: formData.campusSpot,
-        building: formData.building,
-        safeMeetingZone: true
-      }
-    };
+    try {
+      const newListing = {
+        title: formData.title.trim(),
+        category: formData.category,
+        listingType: typeNormalized,
+        sellingPrice: typeNormalized === 'sell' ? Number(formData.price) : 0,
+        price: typeNormalized === 'sell' ? Number(formData.price) : 0,
+        originalPrice: Number(formData.originalPrice) || (Number(formData.price) ? Number(formData.price) * 2 : 50),
+        desiredItems: typeNormalized === 'swap' ? formData.desiredItems.trim() : '',
+        condition: formData.condition,
+        campus: formData.campus,
+        co2SavedKg: estimatedCo2,
+        description: formData.description.trim(),
+        images: [formData.imageUrl],
+        imageUrl: formData.imageUrl,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [formData.category],
+        location: {
+          campusSpot: formData.campusSpot,
+          building: formData.building,
+          safeMeetingZone: true
+        }
+      };
 
-    await addListing(newListing);
-    setIsSubmitting(false);
-    navigate('/marketplace');
+      await addListing(newListing);
+      setIsSubmitting(false);
+      navigate('/marketplace');
+    } catch (err) {
+      setIsSubmitting(false);
+      setError(err.message || 'Could not publish listing. Please check your credentials and try again.');
+    }
   };
 
   return (
@@ -123,6 +161,30 @@ export default function CreateListingPage() {
           </div>
         </div>
 
+        {/* Auth / Error notice */}
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {!token && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-xs sm:text-sm">
+              <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
+              <span>You are currently browsing as a guest. Please sign in to link this listing to your verified campus profile.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-xs font-bold px-3 py-1.5 bg-amber-700 text-white rounded-xl hover:bg-amber-800 shrink-0"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
+
         {/* Form Card */}
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-sage-200/80 shadow-xs space-y-8">
           {/* Section 1: Basic Info */}
@@ -133,11 +195,12 @@ export default function CreateListingPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Listing Title *
+                Listing Title * (min 3 chars)
               </label>
               <input
                 type="text"
                 required
+                minLength={3}
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g. Campbell Biology 12th Ed / TI-84 Plus CE / Chem Lab Coat Size M"
@@ -215,7 +278,7 @@ export default function CreateListingPage() {
           {/* Section 2: Listing Type & Pricing */}
           <div className="space-y-4">
             <h2 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">
-              2. Exchange Type & Pricing
+              2. Exchange Type & Details
             </h2>
 
             <div className="grid grid-cols-3 gap-3">
@@ -251,18 +314,39 @@ export default function CreateListingPage() {
               })}
             </div>
 
-            {formData.listingType !== 'free' && (
+            {/* If Swap: show desiredItems */}
+            {formData.listingType === 'trade' && (
+              <div className="p-4 bg-indigo-50/60 border border-indigo-200/80 rounded-2xl space-y-1.5 animate-in fade-in duration-200">
+                <label className="block text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                  Desired Items for Swap / Exchange *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.desiredItems}
+                  onChange={(e) => setFormData({ ...formData, desiredItems: e.target.value })}
+                  placeholder="e.g. TI-84 Plus, CHEM 102 Lab manual, Organic Chemistry model kit..."
+                  className="w-full px-4 py-3 bg-white border border-indigo-300 rounded-xl text-sm focus:outline-hidden focus:border-indigo-600 font-medium text-slate-800"
+                />
+                <span className="text-[11px] text-indigo-700 block">
+                  Classmates will see what gear or course supplies you are looking to exchange for this item.
+                </span>
+              </div>
+            )}
+
+            {/* If Sell: show price inputs */}
+            {formData.listingType === 'sell' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Your Price ($) *
+                    Your Selling Price ($) *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
                     <input
                       type="number"
                       min="1"
-                      required={formData.listingType === 'sell'}
+                      required
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       placeholder="e.g. 35"

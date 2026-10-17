@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Leaf, 
@@ -13,38 +13,94 @@ import {
   Gift,
   RefreshCw,
   Sparkles,
-  TreePine,
-  Coins
+  AlertTriangle,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function ItemDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { listings, savedItemIds, toggleSave, showToast } = useApp();
+  const { listings, savedItemIds, toggleSave, showToast, requestExchange } = useApp();
 
-  const item = listings.find((i) => i.id === id) || listings[0];
-  const isSaved = item ? savedItemIds.includes(item.id) : false;
-
+  const [item, setItem] = useState(() => listings.find((i) => i.id === id) || null);
+  const [loading, setLoading] = useState(!item);
   const [selectedMeetingTime, setSelectedMeetingTime] = useState('Today after 3:00 PM');
   const [meetingNote, setMeetingNote] = useState('');
   const [requestSent, setRequestSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Fetch from backend API on mount or ID change
+  useEffect(() => {
+    let isMounted = true;
+    const fetchItem = async () => {
+      try {
+        const res = await fetch(`/api/listings/${id}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data && isMounted) {
+            setItem(json.data);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch listing from API:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchItem();
+    return () => { isMounted = false; };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto py-24 text-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-forest-700 mx-auto" />
+        <p className="text-sm text-slate-500 font-medium">Loading listing details from CampusLoop...</p>
+      </div>
+    );
+  }
 
   if (!item) {
     return (
       <div className="max-w-2xl mx-auto py-20 text-center space-y-4">
-        <h2 className="text-2xl font-bold">Item Not Found</h2>
-        <Link to="/marketplace" className="text-forest-700 font-semibold underline">
+        <h2 className="text-2xl font-bold text-slate-900">Item Not Found</h2>
+        <p className="text-sm text-slate-500">This listing may have been completed, deleted, or expired.</p>
+        <Link to="/marketplace" className="inline-block px-5 py-2.5 rounded-xl bg-forest-800 text-white font-bold text-sm">
           Return to Marketplace
         </Link>
       </div>
     );
   }
 
-  const handleSendRequest = (e) => {
+  const isSaved = savedItemIds.includes(item.id);
+  const isAvailable = (item.status || 'available') === 'available';
+
+  const handleSendRequest = async (e) => {
     e.preventDefault();
-    setRequestSent(true);
-    showToast(`Pickup request sent to ${item.seller?.name}! Check your dashboard.`, 'success');
+    if (!isAvailable) {
+      setErrorMessage(`Cannot request pickup: item is already marked as ${item.status}.`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      await requestExchange(item.id, {
+        meetingTime: selectedMeetingTime,
+        note: meetingNote
+      });
+      setRequestSent(true);
+      showToast(`Pickup request sent to ${item.seller?.name || 'seller'}!`, 'success');
+    } catch (err) {
+      setErrorMessage(err.message || 'Could not send exchange request.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const copyShareLink = () => {
@@ -52,6 +108,32 @@ export default function ItemDetailPage() {
       navigator.clipboard.writeText(window.location.href);
       showToast('Item link copied to clipboard!', 'info');
     }
+  };
+
+  const statusBadge = () => {
+    const status = item.status || 'available';
+    if (status === 'reserved') {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5" />
+          Reserved
+        </span>
+      );
+    }
+    if (status === 'completed') {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-600 text-white shadow-xs flex items-center gap-1.5">
+          <CheckCircle className="w-3.5 h-3.5" />
+          Completed
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+        Available
+      </span>
+    );
   };
 
   return (
@@ -72,7 +154,7 @@ export default function ItemDetailPage() {
           {/* Left Media Container */}
           <div className="relative bg-slate-900 min-h-[360px] md:min-h-[500px]">
             <img
-              src={item.imageUrl}
+              src={item.imageUrl || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'}
               alt={item.title}
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -81,11 +163,14 @@ export default function ItemDetailPage() {
             <div className="relative z-10 p-6 flex flex-col justify-between h-full">
               <div className="flex items-center justify-between">
                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-forest-900/80 text-sage-200 border border-forest-600 backdrop-blur-md">
-                  {item.category.replace('-', ' ')}
+                  {item.category?.replace('-', ' ')}
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/90 text-slate-800 backdrop-blur-md">
-                  Condition: {item.condition}
-                </span>
+                <div className="flex items-center gap-2">
+                  {statusBadge()}
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/90 text-slate-800 backdrop-blur-md">
+                    {item.condition}
+                  </span>
+                </div>
               </div>
 
               {/* Carbon Savings Widget */}
@@ -122,24 +207,24 @@ export default function ItemDetailPage() {
               {/* Price & Wishlist Header */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  {item.listingType === 'free' ? (
+                  {item.listingType === 'free' || item.listingType === 'giveaway' ? (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-sm">
                       <Gift className="w-4 h-4" />
                       Free Campus Giveaway
                     </div>
-                  ) : item.listingType === 'trade' ? (
+                  ) : item.listingType === 'trade' || item.listingType === 'swap' ? (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-100 text-indigo-800 font-bold text-sm">
                       <RefreshCw className="w-4 h-4" />
-                      Open for Peer Exchange / Trade
+                      Open for Swap / Exchange
                     </div>
                   ) : (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-forest-950">${item.price}</span>
-                      {item.originalPrice > item.price && (
+                      <span className="text-3xl font-black text-forest-950">${item.sellingPrice ?? item.price}</span>
+                      {(item.originalPrice || 0) > (item.sellingPrice ?? item.price) && (
                         <>
                           <span className="text-sm text-slate-400 line-through">${item.originalPrice}</span>
                           <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                            Save ${item.originalPrice - item.price}
+                            Save ${item.originalPrice - (item.sellingPrice ?? item.price)}
                           </span>
                         </>
                       )}
@@ -174,6 +259,18 @@ export default function ItemDetailPage() {
                 {item.title}
               </h1>
 
+              {/* Swap Desired Items Details */}
+              {(item.listingType === 'trade' || item.listingType === 'swap') && item.desiredItems && (
+                <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-2xl">
+                  <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider block">
+                    🔄 Desired Items in Swap:
+                  </span>
+                  <p className="text-sm font-semibold text-indigo-900 mt-1">
+                    {item.desiredItems}
+                  </p>
+                </div>
+              )}
+
               {/* Description */}
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
                 {item.description}
@@ -189,7 +286,7 @@ export default function ItemDetailPage() {
                   {item.location?.campusSpot || 'Main Library 2nd Floor'}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Building: {item.location?.building || 'W.E.B. Du Bois Library'} · Well-lit public student facility
+                  Building: {item.location?.building || item.campus || 'Main Campus'} · Well-lit public student facility
                 </p>
               </div>
 
@@ -203,14 +300,14 @@ export default function ItemDetailPage() {
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-slate-900 text-sm">{item.seller?.name}</span>
-                      {item.seller?.verifiedStudent && (
+                      <span className="font-bold text-slate-900 text-sm">{item.seller?.name || 'Campus Student'}</span>
+                      {(item.seller?.verifiedStudent || item.seller?.isCollegeVerified) && (
                         <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full">
                           .edu Verified
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">{item.seller?.department} · {item.seller?.year}</p>
+                    <p className="text-xs text-slate-500">{item.seller?.department || 'General Studies'} · {item.seller?.year || 'Student'}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -224,9 +321,26 @@ export default function ItemDetailPage() {
               </div>
             </div>
 
-            {/* Meetup Proposal Form */}
+            {/* Meetup Proposal Form or Unavailable Banner */}
             <div className="pt-4 border-t border-slate-100">
-              {requestSent ? (
+              {errorMessage && (
+                <div className="mb-3 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {!isAvailable ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-1">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 mx-auto" />
+                  <p className="text-sm font-bold text-slate-800">
+                    This item is currently {item.status.toUpperCase()}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    New exchange proposals cannot be accepted while an item is reserved or completed.
+                  </p>
+                </div>
+              ) : requestSent ? (
                 <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-center space-y-1">
                   <CheckCircle className="w-6 h-6 text-emerald-600 mx-auto" />
                   <p className="font-bold text-sm">Pickup Proposal Dispatched!</p>
@@ -261,10 +375,20 @@ export default function ItemDetailPage() {
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white bg-forest-800 hover:bg-forest-900 shadow-md transition-all flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white bg-forest-800 hover:bg-forest-900 shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Send className="w-4 h-4 text-sage-300" />
-                    <span>Request Campus Pickup</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-sage-300" />
+                        <span>Sending Request...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 text-sage-300" />
+                        <span>Request Campus Pickup</span>
+                      </>
+                    )}
                   </button>
                 </form>
               )}

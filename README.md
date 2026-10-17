@@ -200,19 +200,22 @@ npm run dev:client
 
 ## 🧪 Automated Testing
 
-CampusLoop includes an end-to-end automated test suite for backend authentication, password hashing, JWT issuance, college verification checks, and protected routes:
+CampusLoop includes comprehensive end-to-end automated test suites for backend authentication, security, marketplace discovery, and listing lifecycle management:
 
 ```powershell
-# From project root:
+# Run all server tests (Auth + Marketplace Discovery):
 npm run test:server
 
-# Or from server directory:
+# Or run individual test suites from the server folder:
 cd server
-npm test
+npm run test:auth          # 23 Authentication & JWT assertions
+npm run test:marketplace   # 30 Marketplace & Discovery assertions
 ```
 
-### Test Suite Coverage (23 Assertions):
-- [x] Health endpoint status check
+### Complete Test Suite Coverage (53 Assertions Total):
+
+#### 1. Authentication & Security (23 Assertions):
+- [x] Health endpoint status check (`GET /api/health`)
 - [x] Student registration with collegiate `.edu` email (`isCollegeVerified === true`)
 - [x] Student registration with personal email (`isCollegeVerified === false`)
 - [x] Duplicate email registration rejection (`409 Conflict`)
@@ -226,6 +229,26 @@ npm test
 - [x] Profile update via protected route (`PUT /api/auth/profile`)
 - [x] Logout confirmation (`POST /api/auth/logout`)
 
+#### 2. Phase 3 Marketplace, Ownership & Discovery (30 Assertions):
+- [x] Authenticated listing creation returns `201 Created`
+- [x] Listing title, category, condition, and campus match
+- [x] Initial listing status defaults to `available`
+- [x] Automatic carbon offset (CO₂ kg saved) calculation on creation
+- [x] Unauthenticated listing creation rejection (`401 Unauthorized`)
+- [x] Validation rejection for titles < 3 characters or descriptions < 10 characters (`400 Bad Request`)
+- [x] Course Swap listing creation with `desiredItems` and automatic $0 selling price
+- [x] Public listing detail retrieval (`GET /api/listings/:id`)
+- [x] Owner successfully updates listing details (`PUT /api/listings/:id`)
+- [x] Non-owner updating listing rejected with `403 Forbidden` (ownership enforcement)
+- [x] Owner updates availability status to `reserved` (`PATCH /api/listings/:id/status`)
+- [x] Exchange request rejection on unavailable/reserved/completed items (`400 Bad Request`)
+- [x] Non-owner deleting listing rejected with `403 Forbidden`
+- [x] Owner successfully deletes listing (`DELETE /api/listings/:id`)
+- [x] Deleted listing returns `404 Not Found`
+- [x] Filtered discovery query returns `200 OK` with pagination metadata
+- [x] Full-text search across titles, descriptions, and course tags
+- [x] Price range filtering (`minPrice`, `maxPrice`) for Sell listings
+
 ---
 
 ## 📡 Complete API Endpoint Reference
@@ -233,19 +256,27 @@ npm test
 ### Authentication Routes (`/api/auth`)
 | Method | Endpoint | Auth Required | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | No | Register new student with bcrypt hashing & domain check |
+| `POST` | `/api/auth/register` | No | Register new student with bcrypt hashing & collegiate domain check |
 | `POST` | `/api/auth/login` | No | Login student and return signed JWT token |
 | `GET` | `/api/auth/me` | **Yes (Bearer JWT)** | Fetch authenticated student profile |
 | `PUT` | `/api/auth/profile` | **Yes (Bearer JWT)** | Update profile (department, year, campus, avatar) |
-| `POST` | `/api/auth/verify-college` | **Yes (Bearer JWT)** | Verify collegiate status via campus ID or .edu email |
-| `POST` | `/api/auth/logout` | No | Confirm logout |
+| `POST` | `/api/auth/verify-college` | **Yes (Bearer JWT)** | Verify collegiate status via campus ID code |
+| `POST` | `/api/auth/logout` | No | Invalidate/confirm logout session |
 
-### Marketplace & Impact Routes
+### Marketplace Discovery & Listing Routes (`/api/listings`)
 | Method | Endpoint | Auth Required | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | No | API health & database connection status |
-| `GET` | `/api/listings` | No | Browse items with search, category, type, and sort filters |
-| `GET` | `/api/listings/:id` | No | Get single listing details |
-| `POST` | `/api/listings` | Optional | Post sustainable item (attaches authenticated seller if logged in) |
-| `GET` | `/api/listings/categories` | No | Category metadata with CO₂ offset rates |
-| `GET` | `/api/stats` | No | Live aggregated campus impact scoreboard |
+| `GET` | `/api/listings` | No | Discover items with search, category, type, condition, price range, sorting, and pagination |
+| `GET` | `/api/listings/:id` | No | Get single listing details with seller profile & safe-zone info |
+| `POST` | `/api/listings` | **Yes (Bearer JWT)** | Create new item listing (Swap, Give Away, or Sell) |
+| `PUT` | `/api/listings/:id` | **Yes (Owner Only)** | Update listing details (enforces owner `403 Forbidden` check) |
+| `PATCH` | `/api/listings/:id/status` | **Yes (Owner Only)** | Update availability status (`available`, `reserved`, `completed`) |
+| `DELETE` | `/api/listings/:id` | **Yes (Owner Only)** | Delete item listing (enforces owner `403 Forbidden` check) |
+| `POST` | `/api/listings/:id/request-exchange` | Optional / Bearer | Submit meetup proposal (rejected if item is reserved or completed) |
+| `GET` | `/api/listings/categories` | No | Category metadata with environmental offset metrics |
+
+### System & Impact Routes
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | No | API health, uptime & database connectivity check |
+| `GET` | `/api/stats` | No | Aggregated campus CO₂ savings, dollar savings & reused item counts |

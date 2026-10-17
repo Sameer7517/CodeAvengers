@@ -7,36 +7,71 @@ import {
   Bookmark, 
   Share2, 
   Clock, 
-  Calendar, 
   Send, 
   CheckCircle, 
   AlertCircle,
-  Sparkles,
-  TrendingDown,
   Gift,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function ItemDetailModal() {
-  const { selectedItemForModal, setSelectedItemForModal, savedItemIds, toggleSave, showToast } = useApp();
-  const [activeTab, setActiveTab] = useState('details'); // 'details' | 'pickup'
+  const { selectedItemForModal, setSelectedItemForModal, savedItemIds, toggleSave, showToast, token } = useApp();
   const [selectedMeetingTime, setSelectedMeetingTime] = useState('Today after 3:00 PM');
   const [meetingNote, setMeetingNote] = useState('');
   const [requestSent, setRequestSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!selectedItemForModal) return null;
   const item = selectedItemForModal;
   const isSaved = savedItemIds.includes(item.id);
+  const isAvailable = (item.status || 'available') === 'available';
 
-  const handleSendRequest = (e) => {
+  const handleSendRequest = async (e) => {
     e.preventDefault();
-    setRequestSent(true);
-    showToast(`Pickup request sent to ${item.seller?.name}! Check your dashboard for updates.`, 'success');
-    setTimeout(() => {
-      setRequestSent(false);
-      setSelectedItemForModal(null);
-    }, 2200);
+    if (!isAvailable) {
+      setErrorMessage(`Cannot request meetup: item is currently marked as ${item.status}.`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const activeToken = token || localStorage.getItem('campusloop_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (activeToken) {
+        headers['Authorization'] = `Bearer ${activeToken}`;
+      }
+
+      const res = await fetch(`/api/listings/${item.id}/request-exchange`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          meetingTime: selectedMeetingTime,
+          note: meetingNote
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Exchange request failed');
+      }
+
+      setRequestSent(true);
+      showToast(`Pickup request sent to ${item.seller?.name || 'seller'}!`, 'success');
+      setTimeout(() => {
+        setRequestSent(false);
+        setSelectedItemForModal(null);
+      }, 2200);
+    } catch (err) {
+      setErrorMessage(err.message || 'Could not send exchange request');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const copyShareLink = () => {
@@ -44,6 +79,32 @@ export default function ItemDetailModal() {
       navigator.clipboard.writeText(window.location.origin + `/marketplace?item=${item.id}`);
       showToast('Item link copied to clipboard!', 'info');
     }
+  };
+
+  const statusBadge = () => {
+    const status = item.status || 'available';
+    if (status === 'reserved') {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs flex items-center gap-1">
+          <Clock className="w-3.5 h-3.5" />
+          Reserved
+        </span>
+      );
+    }
+    if (status === 'completed') {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-600 text-white shadow-xs flex items-center gap-1">
+          <CheckCircle className="w-3.5 h-3.5" />
+          Completed
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs flex items-center gap-1">
+        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+        Available for Pickup
+      </span>
+    );
   };
 
   return (
@@ -65,7 +126,7 @@ export default function ItemDetailModal() {
           {/* Left Column: Image & Carbon Footprint Highlights */}
           <div className="relative bg-slate-900 flex flex-col justify-between min-h-[300px] md:min-h-[480px]">
             <img
-              src={item.imageUrl}
+              src={item.imageUrl || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'}
               alt={item.title}
               className="absolute inset-0 w-full h-full object-cover opacity-90"
             />
@@ -74,11 +135,11 @@ export default function ItemDetailModal() {
             {/* Top Badges */}
             <div className="relative z-10 p-5 flex items-center justify-between">
               <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-forest-900/80 text-sage-200 border border-forest-600 backdrop-blur-md">
-                {item.category.replace('-', ' ')}
+                {item.category?.replace('-', ' ')}
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/90 text-slate-800 backdrop-blur-md">
-                Condition: {item.condition}
-              </span>
+              <div className="flex items-center gap-1.5">
+                {statusBadge()}
+              </div>
             </div>
 
             {/* Bottom Carbon Savings Widget */}
@@ -90,7 +151,7 @@ export default function ItemDetailModal() {
                     <span>Environmental Impact Saved</span>
                   </div>
                   <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold">
-                    100% Circular
+                    Condition: {item.condition}
                   </span>
                 </div>
 
@@ -116,24 +177,24 @@ export default function ItemDetailModal() {
               {/* Header Price & Type */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  {item.listingType === 'free' ? (
+                  {item.listingType === 'free' || item.listingType === 'giveaway' ? (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-sm">
                       <Gift className="w-4 h-4" />
-                      Free Campus Giveaway
+                      100% Free Campus Give Away
                     </div>
-                  ) : item.listingType === 'trade' ? (
+                  ) : item.listingType === 'trade' || item.listingType === 'swap' ? (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-100 text-indigo-800 font-bold text-sm">
                       <RefreshCw className="w-4 h-4" />
-                      Open for Peer Exchange / Trade
+                      Swap / Exchange
                     </div>
                   ) : (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-forest-950">${item.price}</span>
-                      {item.originalPrice > item.price && (
+                      <span className="text-3xl font-black text-forest-950">${item.sellingPrice ?? item.price}</span>
+                      {item.originalPrice > (item.sellingPrice ?? item.price) && (
                         <>
                           <span className="text-sm text-slate-400 line-through">${item.originalPrice}</span>
                           <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                            Save ${item.originalPrice - item.price} ({(100 - (item.price / item.originalPrice * 100)).toFixed(0)}% off)
+                            Save ${item.originalPrice - (item.sellingPrice ?? item.price)}
                           </span>
                         </>
                       )}
@@ -169,21 +230,23 @@ export default function ItemDetailModal() {
                 {item.title}
               </h2>
 
+              {/* Swap Desired Items Callout */}
+              {(item.listingType === 'swap' || item.listingType === 'trade' || item.desiredItems) && item.desiredItems && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-3.5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900">
+                    <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Desired Items for Swap:</span>
+                  </div>
+                  <p className="text-xs text-indigo-950 font-medium">
+                    {item.desiredItems}
+                  </p>
+                </div>
+              )}
+
               {/* Description */}
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
                 {item.description}
               </p>
-
-              {/* Tags */}
-              {item.tags && item.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {item.tags.map((tag, idx) => (
-                    <span key={idx} className="text-xs px-2.5 py-0.5 bg-offwhite-200 text-slate-700 rounded-lg font-medium">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {/* Campus Meeting Zone Info */}
               <div className="bg-sage-50/70 border border-sage-200/80 rounded-2xl p-3.5 space-y-1.5">
@@ -195,7 +258,7 @@ export default function ItemDetailModal() {
                   {item.location?.campusSpot || 'Main Library 2nd Floor'}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Building: {item.location?.building || 'W.E.B. Du Bois Library'} · Well-lit public area
+                  Building: {item.location?.building || item.campus || 'Main Campus Library'} · Well-lit public area
                 </p>
               </div>
 
@@ -204,19 +267,23 @@ export default function ItemDetailModal() {
                 <div className="flex items-center gap-3">
                   <img
                     src={item.seller?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-                    alt={item.seller?.name}
+                    alt={item.seller?.name || 'Seller'}
                     className="w-11 h-11 rounded-full object-cover border-2 border-forest-600"
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-slate-900 text-sm">{item.seller?.name}</span>
-                      {item.seller?.verifiedStudent && (
+                      <span className="font-bold text-slate-900 text-sm">{item.seller?.name || 'Student Seller'}</span>
+                      {(item.seller?.isCollegeVerified || item.seller?.verifiedStudent) ? (
                         <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full">
                           .edu Verified
                         </span>
+                      ) : (
+                        <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded-full">
+                          Unverified
+                        </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">{item.seller?.department} · {item.seller?.year}</p>
+                    <p className="text-xs text-slate-500">{item.seller?.department || 'Student'} · {item.seller?.year || 'Campus'}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -232,11 +299,28 @@ export default function ItemDetailModal() {
 
             {/* Bottom Pickup Proposal / Interaction */}
             <div className="mt-6 pt-4 border-t border-slate-100">
-              {requestSent ? (
+              {errorMessage && (
+                <div className="mb-3 p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {!isAvailable ? (
+                <div className="bg-slate-100 border border-slate-200 text-slate-700 p-4 rounded-xl text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 font-bold text-xs">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span>Item Unavailable for Exchange</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    This listing is marked as <strong>{item.status}</strong> and is not accepting new exchange requests.
+                  </p>
+                </div>
+              ) : requestSent ? (
                 <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3.5 rounded-xl text-center space-y-1">
                   <CheckCircle className="w-6 h-6 text-emerald-600 mx-auto" />
-                  <p className="font-bold text-sm">Meeting Request Sent!</p>
-                  <p className="text-xs text-emerald-700">The seller has been notified via their campus portal.</p>
+                  <p className="font-bold text-sm">Meeting Request Transmitted!</p>
+                  <p className="text-xs text-emerald-700">The seller received your proposal for a campus safe-zone meetup.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSendRequest} className="space-y-3">
@@ -267,10 +351,20 @@ export default function ItemDetailModal() {
 
                   <button
                     type="submit"
-                    className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-forest-800 hover:bg-forest-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-forest-800 hover:bg-forest-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Send className="w-4 h-4 text-sage-300" />
-                    <span>Request Campus Pickup</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-sage-300" />
+                        <span>Transmitting Request...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 text-sage-300" />
+                        <span>Request Campus Pickup</span>
+                      </>
+                    )}
                   </button>
                 </form>
               )}
