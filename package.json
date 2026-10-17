@@ -1,0 +1,25 @@
+{
+  "name": "campusloop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CampusLoop - Sustainability-driven Campus Exchange & Reuse Marketplace for University Hackathons",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build:client": "npm --prefix client run build",
+    "start:server": "npm --prefix server start",
+    "install:all": "npm --prefix server install && npm --prefix client install"
+  },
+  "keywords": [
+    "sustainability",
+    "hackathon",
+    "circular-economy",
+    "campus-exchange",
+    "react",
+    "vite",
+    "express",
+    "tailwind"
+  ],
+  "author": "CampusLoop Team",
+  "license": "MIT"
+}

@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  body {
+    background-color: #f9f9f6;
+    color: #1f2937;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f4f3ee;
+}
+::-webkit-scrollbar-thumb {
+  background: #cddfcf;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8ac5a6;
+}
+
+/* Glassmorphism and eco blur cards */
+.eco-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.eco-gradient-forest {
+  background: linear-gradient(135deg, #1b4634 0%, #2a7050 50%, #388b64 100%);
+}
+
+.eco-gradient-subtle {
+  background: linear-gradient(180deg, #f0f7f3 0%, #f9f9f6 100%);
+}
