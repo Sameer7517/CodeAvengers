@@ -1,7 +1,7 @@
 # CodeAvengers — CampusLoop: Collegiate Circular Exchange & Reuse Marketplace
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-success?logo=vercel&style=for-the-badge)](https://code-avengers.vercel.app/)
-[![Demo Video]([https://img.shields.io/badge/Demo-Video%20Walkthrough-red?logo=youtube&style=for-the-badge)](#-video-demonstration-link](https://drive.google.com/file/d/1yl1rUeaPMFRdlRxAAAbwrsfSAajeylsJ/view?pli=1))
+[![Demo Video](https://img.shields.io/badge/Demo-Google%20Drive%20Video-red?logo=googledrive&style=for-the-badge)](https://drive.google.com/file/d/1yl1rUeaPMFRdlRxAAAbwrsfSAajeylsJ/view?usp=sharing)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-CodeAvengers-blue?logo=github&style=for-the-badge)](https://github.com/Sameer7517/CodeAvengers)
 [![Tests](https://img.shields.io/badge/Automated%20Tests-126%2F126%20Passed-brightgreen?style=for-the-badge)](file:///d:/OneDrive/Desktop/CampusLoop/server/tests)
 
@@ -15,7 +15,7 @@
 | Resource | URL | Description |
 | :--- | :--- | :--- |
 | 🌐 **Live Web Application** | **[https://code-avengers.vercel.app/](https://code-avengers.vercel.app/)** | Production frontend hosted on Vercel |
-| 🎥 **Video Demonstration** | **[Watch Demonstration Video](#-video-demonstration-link)** | Complete project walkthrough and feature showcase |
+| 🎥 **Video Demonstration** | **[Watch on Google Drive](https://drive.google.com/file/d/1yl1rUeaPMFRdlRxAAAbwrsfSAajeylsJ/view?usp=sharing)** | Complete project walkthrough and feature showcase |
 | 💻 **Source Code Repository** | **[https://github.com/Sameer7517/CodeAvengers](https://github.com/Sameer7517/CodeAvengers)** | Full-stack MERN monorepo |
 | ⚡ **Backend API Health Check** | **`https://campusloop-api.onrender.com/api/health`** | Express REST API on Render |
 
@@ -24,8 +24,7 @@
 ## 🎥 Video Demonstration Link
 
 > 📺 **Click below to watch the complete end-to-end walkthrough of CampusLoop:**  
-> **[▶️ Watch CampusLoop Demonstration Video](https://code-avengers.vercel.app/)**  
-> *(Insert your YouTube, Loom, or Google Drive demonstration link here)*
+> **[▶️ Watch CampusLoop Demonstration Video on Google Drive](https://drive.google.com/file/d/1yl1rUeaPMFRdlRxAAAbwrsfSAajeylsJ/view?usp=sharing)**
 
 **In this video demonstration:**
 1. **User Onboarding:** Instant registration with college affiliation (**PVG's COET, Pune**, COEP, VJTI, etc.) and auto-generated initials-based SVG avatars.
