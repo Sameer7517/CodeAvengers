@@ -1,9 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_LISTINGS, CATEGORIES, DEMO_USER } from '../data/sampleData';
+import { apiUrl } from '../utils/api';
+
+const customFetch = (url, options) => {
+  const target = typeof url === 'string' && url.startsWith('/api') ? apiUrl(url) : url;
+  return window.fetch(target, options);
+};
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const fetch = customFetch;
   const [listings, setListings] = useState(INITIAL_LISTINGS);
   const [categories, setCategories] = useState(CATEGORIES);
   const [token, setToken] = useState(() => localStorage.getItem('campusloop_token') || null);
