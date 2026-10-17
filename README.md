@@ -4,7 +4,7 @@
 > An eco-conscious, hyper-local circular reuse platform connecting university students to buy, sell, donate, and exchange textbooks, lab essentials, calculators, and study supplies while shrinking the collegiate carbon footprint.
 
 ### 🌐 Live Production Deployment
-- **Live Frontend (Vercel):** [https://code-avengers-hjdlqp14v-mixora.vercel.app](https://code-avengers-hjdlqp14v-mixora.vercel.app)
+- **Live Frontend (Vercel):** [https://code-avengers.vercel.app/](https://code-avengers.vercel.app/)
 - **GitHub Repository:** [https://github.com/Sameer7517/CodeAvengers](https://github.com/Sameer7517/CodeAvengers)
 
 ---
