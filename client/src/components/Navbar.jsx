@@ -15,7 +15,8 @@ import {
   Bell,
   CheckCheck,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -84,7 +85,7 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center gap-1 lg:gap-2">
             <Link
               to="/marketplace"
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive('/marketplace')
                   ? 'bg-forest-50 text-forest-800 font-semibold'
                   : 'text-slate-600 hover:text-forest-800 hover:bg-forest-50/50'
@@ -94,31 +95,45 @@ export default function Navbar() {
             </Link>
 
             <Link
-              to="/marketplace?category=textbooks"
-              className="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-forest-800 hover:bg-forest-50/50 transition-colors"
+              to="/circular-swap"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                isActive('/circular-swap')
+                  ? 'bg-forest-50 text-forest-800 font-semibold'
+                  : 'text-slate-600 hover:text-forest-800 hover:bg-forest-50/50'
+              }`}
             >
-              Textbooks
+              <RefreshCw className="w-3.5 h-3.5 text-forest-600" />
+              <span>Swap Finder</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Loop
+              </span>
             </Link>
 
             <Link
-              to="/marketplace?category=lab-gear"
-              className="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-forest-800 hover:bg-forest-50/50 transition-colors"
+              to="/impact"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                isActive('/impact')
+                  ? 'bg-forest-50 text-forest-800 font-semibold'
+                  : 'text-slate-600 hover:text-forest-800 hover:bg-forest-50/50'
+              }`}
             >
-              Lab Gear
+              <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Eco Impact</span>
             </Link>
 
             <Link
               to="/dashboard"
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 isActive('/dashboard')
                   ? 'bg-forest-50 text-forest-800 font-semibold'
                   : 'text-slate-600 hover:text-forest-800 hover:bg-forest-50/50'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 text-forest-600" />
-              Eco Dashboard
+              <LayoutDashboard className="w-3.5 h-3.5 text-forest-600" />
+              <span>Dashboard</span>
             </Link>
           </nav>
+
 
           {/* Right Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
@@ -353,12 +368,27 @@ export default function Navbar() {
               📐 Stationery & Drafting
             </Link>
             <Link
+              to="/circular-swap"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-forest-800 hover:bg-forest-50"
+            >
+              🔄 Circular Swap Finder (Loops)
+            </Link>
+            <Link
+              to="/impact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+            >
+              📊 Campus Sustainability & Leaderboard
+            </Link>
+            <Link
               to="/dashboard"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-sm font-semibold text-forest-700 hover:bg-forest-50"
             >
               🌱 My Eco Impact Dashboard
             </Link>
+
             {user && (
               <Link
                 to="/dashboard"

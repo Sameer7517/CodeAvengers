@@ -370,7 +370,7 @@ class ListingStore {
       throw err;
     }
 
-    const userIdStr = (user._id || user.id).toString();
+    const userIdStr = (user._id || user.id || user).toString();
 
     if (isDatabaseConnected()) {
       try {

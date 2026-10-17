@@ -512,6 +512,128 @@ export const AppProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Phase 5: Fetch Detailed Sustainability Impact Statistics
+  const fetchImpactStats = async () => {
+    try {
+      const res = await fetch('/api/stats/impact');
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return json.data;
+      }
+      throw new Error(json.message || 'Failed to fetch impact stats');
+    } catch (err) {
+      console.warn('Error fetching detailed impact stats:', err);
+      throw err;
+    }
+  };
+
+  // Phase 5: Fetch Top Campus Recyclers Leaderboard
+  const fetchLeaderboard = async (limit = 10) => {
+    try {
+      const res = await fetch(`/api/stats/leaderboard?limit=${limit}`);
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return json.data;
+      }
+      throw new Error(json.message || 'Failed to fetch leaderboard');
+    } catch (err) {
+      console.warn('Error fetching leaderboard:', err);
+      throw err;
+    }
+  };
+
+  // Phase 5: Fetch Circular Swap Suggestions (Transparent Multi-Party Loops)
+  const fetchCircularSuggestions = async ({ category } = {}) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const headers = activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {};
+    const query = category && category !== 'all' ? `?category=${category}` : '';
+
+    try {
+      const res = await fetch(`/api/circular-swap/suggestions${query}`, { headers });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return json.data;
+      }
+      throw new Error(json.message || 'Failed to discover circular cycles');
+    } catch (err) {
+      console.warn('Error fetching circular suggestions:', err);
+      throw err;
+    }
+  };
+
+  // Phase 5: Fetch Circular Proposals for Current Student
+  const fetchUserProposals = async () => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) return [];
+
+    try {
+      const res = await fetch('/api/circular-swap/proposals', {
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return json.data || [];
+      }
+      return [];
+    } catch (err) {
+      console.warn('Error fetching user proposals:', err);
+      return [];
+    }
+  };
+
+  // Phase 5: Propose a Circular Exchange Cycle
+  const proposeCircularCycle = async (cycleData) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) throw new Error('Please sign in to initiate a circular swap proposal');
+
+    const res = await fetch('/api/circular-swap/propose', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ cycleData })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to propose circular exchange cycle');
+    }
+
+    showToast('🔄 Circular proposal initiated! Awaiting participant consent.');
+    fetchNotifications();
+    return json.data;
+  };
+
+  // Phase 5: Submit Explicit Consent Response ('accepted' or 'declined')
+  const respondToCircularProposal = async (proposalId, decision, note = '') => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) throw new Error('Please sign in to respond to circular proposal');
+
+    const res = await fetch(`/api/circular-swap/proposals/${proposalId}/respond`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ decision, note })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to respond to circular proposal');
+    }
+
+    if (decision === 'accepted') {
+      showToast('✅ Explicit consent registered for circular swap loop!');
+    } else {
+      showToast('❌ Circular swap proposal declined. No items reserved.');
+    }
+
+    fetchNotifications();
+    return json.data;
+  };
+
   // Fetch filtered listings from backend with pagination
   const fetchListingsApi = async (params = {}) => {
     const cleanParams = new URLSearchParams();
@@ -530,6 +652,7 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
+
     <AppContext.Provider
       value={{
         listings,
@@ -565,8 +688,15 @@ export const AppProvider = ({ children }) => {
         fetchNotifications,
         markNotificationAsRead,
         markAllNotificationsAsRead,
-        fetchListingsApi
+        fetchListingsApi,
+        fetchImpactStats,
+        fetchLeaderboard,
+        fetchCircularSuggestions,
+        fetchUserProposals,
+        proposeCircularCycle,
+        respondToCircularProposal
       }}
+
     >
       {children}
       {/* Toast Notification Container */}

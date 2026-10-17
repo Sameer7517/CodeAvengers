@@ -7,6 +7,7 @@ import listingRoutes from './routes/listingRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import exchangeRoutes from './routes/exchangeRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import circularSwapRoutes from './routes/circularSwapRoutes.js';
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use('/api/listings', listingRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/exchanges', exchangeRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/circular-swap', circularSwapRoutes);
 
 // Fallback 404 handler
 app.use((req, res) => {
@@ -73,14 +75,17 @@ export const startServer = async () => {
   await connectDB();
 
   return app.listen(PORT, () => {
-    console.log(`🌱 CampusLoop Phase 4 Server running on http://localhost:${PORT}`);
+    console.log(`🌱 CampusLoop Phase 5 Server running on http://localhost:${PORT}`);
     console.log(`🔒 Authentication & JWT endpoints active at /api/auth`);
     console.log(`🛍️ Marketplace CRUD & Discovery active at /api/listings`);
     console.log(`🔄 Exchange Requests & Donations active at /api/exchanges`);
     console.log(`🔔 In-App Notifications active at /api/notifications`);
+    console.log(`♻️ Circular Swap Finder active at /api/circular-swap`);
+    console.log(`📊 Sustainability Impact & Leaderboard active at /api/stats`);
     console.log(`💾 Storage: ${isDatabaseConnected() ? 'Persistent MongoDB Mongoose' : 'In-Memory Resilient Repository'}`);
   });
 };
+
 
 // Only execute listen automatically when run directly as main entry point
 if (process.argv[1]?.endsWith('server.js')) {

@@ -56,3 +56,38 @@ export const protect = async (req, res, next) => {
     });
   }
 };
+
+export const optionalAuth = async (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  const decoded = verifyToken(token);
+  if (!decoded || !decoded.id) {
+    return next();
+  }
+
+  try {
+    let user = null;
+    if (isDatabaseConnected()) {
+      user = await User.findById(decoded.id).select('-password');
+    } else {
+      user = inMemoryUserStore.findById(decoded.id);
+    }
+    if (user) {
+      req.user = user;
+    }
+  } catch (e) {
+    // Silently continue without user
+  }
+  next();
+};
+

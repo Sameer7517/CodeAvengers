@@ -274,6 +274,23 @@ npm run test:exchange      # 24 Exchange Requests, Workflows & Concurrency asser
 - [x] In-app notifications automatically dispatched to student for all lifecycle events (`GET /api/notifications`)
 - [x] Mark notification as read updates status (`PATCH /api/notifications/:id/read`)
 
+#### 4. Phase 5 Sustainability Impact & Circular Swap Finder (15 Assertions):
+- [x] Authenticate demo students (Maya Lin, Samira Rodriguez, Alex Chen)
+- [x] Sustainability impact endpoint returns documented LCA assumptions (`GET /api/stats/impact`)
+- [x] Clearly labels estimates as estimates (`isEstimated: true`, `methodologyVersion: '2026.1-campusloop-lca'`)
+- [x] Strict data segregation: available and in-flight listings are strictly excluded from completed reuse count
+- [x] Student money saved calculated strictly from stored completed catalog data
+- [x] Campus reuse leaderboard returns ranked recyclers by completed items and Eco-Karma (`GET /api/stats/leaderboard`)
+- [x] Discovers valid 3-way triangular exchange cycles ($A \to B \to C \to A$) with transparent match reasons
+- [x] Discovers valid 2-way direct swap cycles ($A \leftrightarrow B$) with affinity scores
+- [x] Matches are suggestions only: items in prospective cycles remain available and unreserved
+- [x] Proposing circular cycle creates proposal with initiator accepted and others pending consent
+- [x] In-app notifications delivered to all loop participants requesting explicit consent
+- [x] Participant decline safely transitions proposal to declined without reserving or modifying any items
+- [x] Item availability revalidation: automatically aborts and marks proposal expired if any item becomes unavailable
+- [x] Full multi-party acceptance: proposal confirms only when all participants explicitly consent
+- [x] Circular loop finalization updates all associated items to `completed` and awards Eco-Karma to all participants
+
 ---
 
 ## 📡 Complete API Endpoint Reference
@@ -311,15 +328,27 @@ npm run test:exchange      # 24 Exchange Requests, Workflows & Concurrency asser
 | `PATCH` | `/api/exchanges/:id/cancel` | **Yes (Requester Only)**| Cancel pending proposal |
 | `PATCH` | `/api/exchanges/:id/complete` | **Yes (Party Only)** | Confirm handover; marks request & listings `completed`, awards +50 Eco-Karma |
 
-### In-App Student Notifications (`/api/notifications`) — Phase 4
+### Circular Swap Finder & Multi-Party Loops (`/api/circular-swap`) — Phase 5
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/circular-swap/suggestions` | Optional / Bearer | Discover 2-way and 3-way exchange cycles among available listings with match explanations |
+| `POST` | `/api/circular-swap/propose` | **Yes (Bearer JWT)** | Initiate formal proposal for a suggested cycle; sets initiator consent to `accepted` |
+| `GET` | `/api/circular-swap/proposals` | **Yes (Bearer JWT)** | List all circular proposals involving the current authenticated student |
+| `GET` | `/api/circular-swap/proposals/:id` | **Yes (Bearer JWT)** | Get proposal details, participant consent status map, and transfer steps |
+| `POST` | `/api/circular-swap/proposals/:id/respond`| **Yes (Bearer JWT)** | Explicit consent (`accepted` or `declined`). Revalidates item availability before confirming |
+
+### In-App Student Notifications (`/api/notifications`) — Phase 4 & 5
 | Method | Endpoint | Auth Required | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/notifications` | **Yes (Bearer JWT)** | Fetch persistent student notifications and unread count |
 | `PATCH` | `/api/notifications/:id/read` | **Yes (Bearer JWT)** | Mark specific notification as read |
 | `PATCH` | `/api/notifications/read-all` | **Yes (Bearer JWT)** | Mark all student notifications as read |
 
-### System & Impact Routes
+### Sustainability Impact & Health Routes (`/api/stats`, `/api/health`) — Phase 5
 | Method | Endpoint | Auth Required | Description |
 | :--- | :--- | :--- | :--- |
+| `GET` | `/api/stats` | No | Legacy aggregated stats endpoint |
+| `GET` | `/api/stats/impact` | No | Detailed sustainability dashboard: completed-only metrics, active catalog counts, documented LCA benchmarks |
+| `GET` | `/api/stats/leaderboard` | No | Ranked campus recyclers leaderboard by completed items reused and Eco-Karma score |
 | `GET` | `/api/health` | No | API health, uptime & database connectivity check |
-| `GET` | `/api/stats` | No | Aggregated campus CO₂ savings, dollar savings & reused item counts |
+

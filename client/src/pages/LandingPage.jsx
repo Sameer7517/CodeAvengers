@@ -15,7 +15,8 @@ import {
   CheckCircle,
   Users,
   Compass,
-  Gift
+  Gift,
+  RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import ItemCard from '../components/ItemCard';
@@ -101,13 +102,22 @@ export default function LandingPage() {
               </Link>
 
               <Link
+                to="/circular-swap"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 shadow-xs hover:shadow transition-all text-base"
+              >
+                <RefreshCw className="w-4 h-4 text-emerald-800 animate-spin-slow" />
+                <span>Circular Swap Finder</span>
+              </Link>
+
+              <Link
                 to="/create"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-forest-900 bg-white hover:bg-sage-50 border border-forest-200/80 shadow-xs hover:shadow transition-all text-base"
               >
                 <Leaf className="w-4 h-4 text-emerald-600" />
-                <span>List an Item Free</span>
+                <span>List Item Free</span>
               </Link>
             </div>
+
 
             {/* Mini Trust Indicators */}
             <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500">
@@ -193,8 +203,23 @@ export default function LandingPage() {
               <p className="text-xs text-slate-400 mt-1">Textbooks, tools & essentials reused</p>
             </div>
           </div>
+
+          {/* Link to Full Impact Dashboard */}
+          <div className="mt-8 pt-6 border-t border-forest-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <span className="text-sage-300">
+              🌱 Environmental metrics and student savings are calculated from verified completed reuse data.
+            </span>
+            <Link
+              to="/impact"
+              className="inline-flex items-center gap-1.5 font-bold text-sage-300 hover:text-white transition underline underline-offset-4"
+            >
+              <span>View Full Sustainability Dashboard & Leaderboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </section>
+
 
       {/* Category Spotlight */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

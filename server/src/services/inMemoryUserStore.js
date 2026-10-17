@@ -12,9 +12,9 @@ class InMemoryUserStore {
     this.initDefaultUsers();
   }
 
-  async initDefaultUsers() {
-    // Hash passwords for default demo accounts
-    const hashedPassword = await bcrypt.hash('CampusLoop2026!', 10);
+  initDefaultUsers() {
+    // Synchronously hash password so users are immediately available upon import
+    const hashedPassword = bcrypt.hashSync('CampusLoop2026!', 10);
 
     this.users = [
       {
@@ -91,9 +91,35 @@ class InMemoryUserStore {
         savedItems: [],
         createdAt: new Date('2026-10-10'),
         updatedAt: new Date('2026-10-10')
+      },
+      {
+        _id: '67b36f1c24e65a001a444444',
+        id: '67b36f1c24e65a001a444444',
+        name: 'Alex Chen',
+        email: 'alex.chen@campus.edu',
+        password: hashedPassword,
+        department: 'Computer Science',
+        year: 'Junior (3rd Year)',
+        campus: 'Central Campus',
+        avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+        karmaScore: 390,
+        itemsReused: 5,
+        co2DivertedKg: 35.8,
+        dollarsSaved: 195,
+        isCollegeVerified: true,
+        verificationStatus: 'verified',
+        verificationMethod: 'institutional_email',
+        verifiedAt: new Date('2026-09-12'),
+        badges: [
+          { title: 'Tech Recycler', icon: 'Cpu', desc: 'Active hardware & supplies sharer' }
+        ],
+        savedItems: [],
+        createdAt: new Date('2026-09-12'),
+        updatedAt: new Date('2026-10-14')
       }
     ];
   }
+
 
   findByEmail(email) {
     if (!email) return null;

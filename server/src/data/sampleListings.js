@@ -178,7 +178,7 @@ export const SAMPLE_LISTINGS = [
     images: ['https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80'],
     imageUrl: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80',
     tags: ['Math', 'Calculus', 'Textbook', 'STEM', 'Trade', 'Swap'],
-    desiredItems: 'Linear Algebra (Lay 6th Ed) or University Physics 15th Ed',
+    desiredItems: 'Casio Calculator or Linear Algebra (Lay 6th Ed)',
     campus: 'Central Campus',
     seller: {
       id: '67b36f1c24e65a001a222222',
@@ -317,5 +317,240 @@ export const SAMPLE_LISTINGS = [
     createdAt: '2026-10-15T15:20:00Z',
     status: 'completed', // Demonstrates Completed status
     viewsCount: 114
+  },
+  {
+    id: 'item-109',
+    _id: '67b36f1c24e65a002a101009',
+    owner: '67b36f1c24e65a001a111111', // Samira Rodriguez
+    title: 'Casio fx-991EX ClassWiz Advanced Scientific Calculator',
+    category: 'electronics',
+    listingType: 'trade',
+    price: 0,
+    sellingPrice: 0,
+    originalPrice: 45,
+    condition: 'Like New',
+    co2SavedKg: 18.2,
+    description: 'Looking to swap this approved high-res scientific calculator for technical drafting compasses or design tools.',
+    images: ['https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48f?auto=format&fit=crop&w=800&q=80'],
+    imageUrl: 'https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48f?auto=format&fit=crop&w=800&q=80',
+    tags: ['Calculator', 'Casio', 'Engineering', 'STEM', 'Trade'],
+    desiredItems: 'Rotring Drafting Set or Technical Drawing tools',
+    campus: 'North Campus',
+    seller: {
+      id: '67b36f1c24e65a001a111111',
+      name: 'Samira Rodriguez',
+      department: 'Environmental Studies',
+      year: 'Junior (3rd Year)',
+      campus: 'North Campus',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 485,
+      itemsReused: 8,
+      isCollegeVerified: true,
+      verifiedStudent: true
+    },
+    location: {
+      campusSpot: 'Sustainability Hub Solar Terrace',
+      building: 'Olver Design Building',
+      safeMeetingZone: true
+    },
+    createdAt: '2026-10-16T12:00:00Z',
+    status: 'available',
+    viewsCount: 188
+  },
+  {
+    id: 'item-110',
+    _id: '67b36f1c24e65a002a101010',
+    owner: '67b36f1c24e65a001a444444', // Alex Chen
+    title: 'Rotring Precision Rapid Drafting Compasses & Scale Ruler',
+    category: 'stationery',
+    listingType: 'trade',
+    price: 0,
+    sellingPrice: 0,
+    originalPrice: 70,
+    condition: 'Like New',
+    co2SavedKg: 5.6,
+    description: 'German precision architectural drafting set. Finished drafting course, eager to swap for a Calculus textbook or mathematics study guide.',
+    images: ['https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=800&q=80'],
+    imageUrl: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=800&q=80',
+    tags: ['Rotring', 'Drafting', 'Architecture', 'Stationery', 'Swap'],
+    desiredItems: 'Stewart Calculus or Math 131 Textbook',
+    campus: 'Central Campus',
+    seller: {
+      id: '67b36f1c24e65a001a444444',
+      name: 'Alex Chen',
+      department: 'Computer Science',
+      year: 'Junior (3rd Year)',
+      campus: 'Central Campus',
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 390,
+      itemsReused: 5,
+      isCollegeVerified: true,
+      verifiedStudent: true
+    },
+    location: {
+      campusSpot: 'Lederle Graduate Research Center Lobby',
+      building: 'Lederle Tower',
+      safeMeetingZone: true
+    },
+    createdAt: '2026-10-16T13:30:00Z',
+    status: 'available',
+    viewsCount: 154
+  },
+  {
+    id: 'item-111',
+    _id: '67b36f1c24e65a002a101011',
+    owner: '67b36f1c24e65a001a222222', // Maya Lin
+    title: 'Organic Chemistry Molecular Model Student Kit (240 Pieces)',
+    category: 'lab-gear',
+    listingType: 'trade',
+    price: 0,
+    sellingPrice: 0,
+    originalPrice: 38,
+    condition: 'Like New',
+    co2SavedKg: 6.5,
+    description: 'Complete molecular modeling kit with atom centers and bonds. Want to trade for anti-fog chemistry lab goggles.',
+    images: ['https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80'],
+    imageUrl: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80',
+    tags: ['Chemistry', 'Pre-Med', 'Lab Gear', 'Molecular Kit', 'Trade'],
+    desiredItems: 'Lab Safety Shield Goggles or Chemical Splash Goggles',
+    campus: 'Science Quad',
+    seller: {
+      id: '67b36f1c24e65a001a222222',
+      name: 'Maya Lin',
+      department: 'Biological Sciences',
+      year: 'Junior (3rd Year)',
+      campus: 'Science Quad',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 485,
+      itemsReused: 7,
+      isCollegeVerified: true,
+      verifiedStudent: true
+    },
+    location: {
+      campusSpot: 'Integrated Sciences Building Concourse',
+      building: 'ISB Science Center',
+      safeMeetingZone: true
+    },
+    createdAt: '2026-10-16T15:00:00Z',
+    status: 'available',
+    viewsCount: 128
+  },
+  {
+    id: 'item-112',
+    _id: '67b36f1c24e65a002a101012',
+    owner: '67b36f1c24e65a001a111111', // Samira Rodriguez
+    title: 'Anti-Fog Chemical Splash Lab Safety Goggles & Indirect Vent',
+    category: 'lab-gear',
+    listingType: 'trade',
+    price: 0,
+    sellingPrice: 0,
+    originalPrice: 30,
+    condition: 'Like New',
+    co2SavedKg: 4.8,
+    description: 'OSHA & ANSI certified chemical splash goggles. Looking to swap for a molecular model kit for organic chem.',
+    images: ['https://images.unsplash.com/photo-1584744982491-665216d95f8b?auto=format&fit=crop&w=800&q=80'],
+    imageUrl: 'https://images.unsplash.com/photo-1584744982491-665216d95f8b?auto=format&fit=crop&w=800&q=80',
+    tags: ['Lab Gear', 'Safety', 'Goggles', 'Chemistry', 'Trade'],
+    desiredItems: 'Molecular Model Kit or Organic Chemistry Kit',
+    campus: 'North Campus',
+    seller: {
+      id: '67b36f1c24e65a001a111111',
+      name: 'Samira Rodriguez',
+      department: 'Environmental Studies',
+      year: 'Junior (3rd Year)',
+      campus: 'North Campus',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 485,
+      itemsReused: 8,
+      isCollegeVerified: true,
+      verifiedStudent: true
+    },
+    location: {
+      campusSpot: 'Sustainability Hub Solar Terrace',
+      building: 'Olver Design Building',
+      safeMeetingZone: true
+    },
+    createdAt: '2026-10-16T15:30:00Z',
+    status: 'available',
+    viewsCount: 140
+  },
+  {
+    id: 'item-113',
+    _id: '67b36f1c24e65a002a101013',
+    owner: '67b36f1c24e65a001a222222', // Maya Lin
+    title: 'Fundamentals of Physics (Halliday & Resnick 11th Ed)',
+    category: 'textbooks',
+    listingType: 'free',
+    price: 0,
+    sellingPrice: 0,
+    originalPrice: 155,
+    condition: 'Good',
+    co2SavedKg: 12.5,
+    description: 'Donated to junior physics sequence. Successfully handed over to peer.',
+    images: ['https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80'],
+    imageUrl: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80',
+    tags: ['Physics', 'Textbook', 'Donation', 'Free'],
+    desiredItems: '',
+    campus: 'Science Quad',
+    seller: {
+      id: '67b36f1c24e65a001a222222',
+      name: 'Maya Lin',
+      department: 'Biological Sciences',
+      year: 'Junior (3rd Year)',
+      campus: 'Science Quad',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 485,
+      itemsReused: 7,
+      isCollegeVerified: true,
+      verifiedStudent: true
+    },
+    location: {
+      campusSpot: 'Science Quad Library',
+      building: 'Hasbrouck Lab',
+      safeMeetingZone: true
+    },
+    createdAt: '2026-10-10T10:00:00Z',
+    status: 'completed', // Verified completed donation
+    viewsCount: 220
+  },
+  {
+    id: 'item-114',
+    _id: '67b36f1c24e65a002a101014',
+    owner: '67b36f1c24e65a001a111111', // Samira Rodriguez
+    title: 'Arduino Uno Ultimate Microcontroller Maker Kit',
+    category: 'electronics',
+    listingType: 'trade',
+    price: 0,
+    sellingPrice: 0,
+    originalPrice: 70,
+    condition: 'Like New',
+    co2SavedKg: 22.0,
+    description: 'Successfully swapped for environmental sensing equipment with engineering peer.',
+    images: ['https://images.unsplash.com/photo-1553406830-ef2513450d76?auto=format&fit=crop&w=800&q=80'],
+    imageUrl: 'https://images.unsplash.com/photo-1553406830-ef2513450d76?auto=format&fit=crop&w=800&q=80',
+    tags: ['Arduino', 'Electronics', 'Maker', 'Engineering'],
+    desiredItems: 'Environmental Sensors',
+    campus: 'North Campus',
+    seller: {
+      id: '67b36f1c24e65a001a111111',
+      name: 'Samira Rodriguez',
+      department: 'Environmental Studies',
+      year: 'Junior (3rd Year)',
+      campus: 'North Campus',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 485,
+      itemsReused: 8,
+      isCollegeVerified: true,
+      verifiedStudent: true
+    },
+    location: {
+      campusSpot: 'Engineering Hub',
+      building: 'Marcus Hall',
+      safeMeetingZone: true
+    },
+    createdAt: '2026-10-11T14:00:00Z',
+    status: 'completed', // Verified completed swap
+    viewsCount: 195
   }
 ];
+

@@ -12,6 +12,8 @@ import ItemDetailPage from './pages/ItemDetailPage';
 import CreateListingPage from './pages/CreateListingPage';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import ImpactPage from './pages/ImpactPage';
+import CircularSwapPage from './pages/CircularSwapPage';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -36,12 +38,15 @@ export default function App() {
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/item/:id" element={<ItemDetailPage />} />
               <Route path="/create" element={<CreateListingPage />} />
+              <Route path="/impact" element={<ImpactPage />} />
+              <Route path="/circular-swap" element={<CircularSwapPage />} />
               <Route path="/login" element={<AuthPage />} />
               <Route path="/register" element={<AuthPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="*" element={<MarketplacePage />} />
             </Routes>
           </main>
+
 
           <Footer />
 
