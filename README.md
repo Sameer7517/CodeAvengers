@@ -3,6 +3,10 @@
 > **Campus Sustainability Hackathon 2026 — Phase 6: End-to-End Reliability, Testing & Demonstration Guide**  
 > An eco-conscious, hyper-local circular reuse platform connecting university students to buy, sell, donate, and exchange textbooks, lab essentials, calculators, and study supplies while shrinking the collegiate carbon footprint.
 
+### 🌐 Live Production Deployment
+- **Live Frontend (Vercel):** [https://code-avengers-hjdlqp14v-mixora.vercel.app](https://code-avengers-hjdlqp14v-mixora.vercel.app)
+- **GitHub Repository:** [https://github.com/Sameer7517/CodeAvengers](https://github.com/Sameer7517/CodeAvengers)
+
 ---
 
 ## 🌍 Sustainability Mission & Core Value
