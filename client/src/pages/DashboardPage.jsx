@@ -21,8 +21,24 @@ import { useApp } from '../context/AppContext';
 import ItemCard from '../components/ItemCard';
 
 export default function DashboardPage() {
-  const { user, listings, savedItemIds } = useApp();
+  const { user, listings, savedItemIds, verifyCollege, showToast } = useApp();
   const [activeTab, setActiveTab] = useState('listings'); // 'listings' | 'saved' | 'messages' | 'impact'
+  const [studentIdInput, setStudentIdInput] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleVerifyStudent = async (e) => {
+    e.preventDefault();
+    if (!studentIdInput.trim()) return;
+    setIsVerifying(true);
+    try {
+      await verifyCollege({ studentIdCode: studentIdInput.trim() });
+      setStudentIdInput('');
+    } catch (err) {
+      showToast(err.message || 'Verification failed', 'error');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   // User's active listings
   const myListings = listings.filter(
@@ -92,9 +108,16 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black tracking-tight">{user.name}</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-forest-800 text-sage-300 border border-forest-600">
-                  .edu Verified
-                </span>
+                {user.isCollegeVerified ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-800 text-emerald-200 border border-emerald-600">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    .edu Verified Student
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-900/80 text-amber-300 border border-amber-700">
+                    ⚠️ Unverified Student
+                  </span>
+                )}
               </div>
               <p className="text-xs text-sage-300 mt-0.5">
                 {user.department} · {user.year} · {user.campus}
@@ -104,6 +127,11 @@ export default function DashboardPage() {
                   <Sparkles className="w-3 h-3 text-emerald-400" />
                   Campus Eco-Champion (Top 5%)
                 </span>
+                {!user.isCollegeVerified && (
+                  <span className="text-[11px] text-amber-300 bg-amber-900/60 px-2 py-0.5 rounded border border-amber-700/60">
+                    Campus ID Verification Needed
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -159,6 +187,38 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Unverified Account Action Card */}
+      {!user.isCollegeVerified && (
+        <div className="bg-amber-50 border-2 border-amber-300/80 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+              <ShieldCheck className="w-4 h-4 text-amber-600" />
+              <span>Complete Campus Student Verification</span>
+            </div>
+            <p className="text-xs text-amber-800 leading-relaxed max-w-xl">
+              You registered with a non-institutional email. Enter your 4+ digit campus student ID or verification code to earn the verified student badge and build community trust.
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyStudent} className="flex items-center gap-2 shrink-0">
+            <input
+              type="text"
+              placeholder="Student ID / Code (e.g. 8421)"
+              value={studentIdInput}
+              onChange={(e) => setStudentIdInput(e.target.value)}
+              className="text-xs px-3 py-2 border border-amber-300 rounded-xl bg-white focus:outline-hidden focus:border-amber-600 font-medium"
+            />
+            <button
+              type="submit"
+              disabled={isVerifying}
+              className="text-xs font-bold px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl shadow-xs transition-colors disabled:opacity-50"
+            >
+              {isVerifying ? 'Verifying...' : 'Verify Now'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Badges Bar */}
       <div className="bg-white rounded-2xl p-5 border border-sage-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">

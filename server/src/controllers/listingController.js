@@ -1,9 +1,9 @@
 import { listingStore } from '../services/listingStore.js';
 
-export const getListings = (req, res) => {
+export const getListings = async (req, res) => {
   try {
     const { search, category, type, sort } = req.query;
-    const listings = listingStore.getAll({ search, category, type, sort });
+    const listings = await listingStore.getAll({ search, category, type, sort });
     res.json({
       success: true,
       count: listings.length,
@@ -14,10 +14,10 @@ export const getListings = (req, res) => {
   }
 };
 
-export const getListingById = (req, res) => {
+export const getListingById = async (req, res) => {
   try {
     const { id } = req.params;
-    const listing = listingStore.getById(id);
+    const listing = await listingStore.getById(id);
     if (!listing) {
       return res.status(404).json({ success: false, message: 'Listing not found' });
     }
@@ -30,15 +30,16 @@ export const getListingById = (req, res) => {
   }
 };
 
-export const createListing = (req, res) => {
+export const createListing = async (req, res) => {
   try {
-    const { title, category, listingType, price, condition, description } = req.body;
+    const { title, category } = req.body;
     
     if (!title || !category) {
       return res.status(400).json({ success: false, message: 'Title and category are required' });
     }
 
-    const newListing = listingStore.create(req.body);
+    // req.user may be set by optionalAuth or protect middleware
+    const newListing = await listingStore.create(req.body, req.user);
     res.status(201).json({
       success: true,
       message: 'Listing created successfully',

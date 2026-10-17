@@ -129,7 +129,12 @@ export default function Navbar() {
                     className="w-8 h-8 rounded-full object-cover border-2 border-sage-300"
                   />
                   <div className="hidden lg:block text-xs">
-                    <p className="font-semibold text-slate-800 leading-none">{user.name.split(' ')[0]}</p>
+                    <div className="flex items-center gap-1 font-semibold text-slate-800 leading-none">
+                      <span>{user.name.split(' ')[0]}</span>
+                      {user.isCollegeVerified && (
+                        <ShieldCheck className="w-3 h-3 text-emerald-600" title="Verified Student" />
+                      )}
+                    </div>
                     <p className="text-[10px] text-forest-600 font-medium mt-0.5">{user.karmaScore} Karma</p>
                   </div>
                 </Link>

@@ -1,31 +1,70 @@
 import { SAMPLE_LISTINGS } from '../data/sampleListings.js';
 import { CATEGORIES } from '../data/categories.js';
+import { Listing } from '../models/Listing.js';
+import { isDatabaseConnected } from '../config/db.js';
 
-/**
- * Repository layer separating demo sample data from database operations.
- * Allows in-memory additions during runtime while maintaining sample isolation.
- */
 class ListingStore {
   constructor() {
-    // Clone sample listings to ensure original source data remains pristine
-    this.listings = JSON.parse(JSON.stringify(SAMPLE_LISTINGS));
+    this.memoryListings = JSON.parse(JSON.stringify(SAMPLE_LISTINGS));
     this.categories = [...CATEGORIES];
   }
 
-  getAll({ search, category, type, sort } = {}) {
-    let result = [...this.listings];
+  async getAll({ search, category, type, sort } = {}) {
+    if (isDatabaseConnected()) {
+      try {
+        const query = {};
 
-    // Filter by Category
-    if (category && category !== 'all') {
-      result = result.filter(item => item.category.toLowerCase() === category.toLowerCase());
+        if (category && category !== 'all') {
+          if (category === 'giveaways') {
+            query.listingType = 'free';
+          } else {
+            query.category = category.toLowerCase();
+          }
+        }
+
+        if (type && type !== 'all') {
+          query.listingType = type.toLowerCase();
+        }
+
+        if (search && search.trim() !== '') {
+          const q = search.trim();
+          query.$or = [
+            { title: { $regex: q, $options: 'i' } },
+            { description: { $regex: q, $options: 'i' } },
+            { tags: { $in: [new RegExp(q, 'i')] } },
+            { 'location.building': { $regex: q, $options: 'i' } }
+          ];
+        }
+
+        let sortOption = { createdAt: -1 };
+        if (sort === 'price-asc') sortOption = { price: 1 };
+        else if (sort === 'price-desc') sortOption = { price: -1 };
+        else if (sort === 'co2-desc') sortOption = { co2SavedKg: -1 };
+
+        const dbListings = await Listing.find(query).sort(sortOption);
+        if (dbListings.length > 0) {
+          return dbListings.map(d => d.toJSON());
+        }
+      } catch (err) {
+        console.warn('ListingStore Mongo Query failed, serving memory fallback:', err.message);
+      }
     }
 
-    // Filter by Listing Type (sell, free, trade, borrow)
+    // In-memory fallback
+    let result = [...this.memoryListings];
+
+    if (category && category !== 'all') {
+      if (category === 'giveaways') {
+        result = result.filter(item => item.listingType === 'free');
+      } else {
+        result = result.filter(item => item.category.toLowerCase() === category.toLowerCase());
+      }
+    }
+
     if (type && type !== 'all') {
       result = result.filter(item => item.listingType.toLowerCase() === type.toLowerCase());
     }
 
-    // Search query across title, description, and tags
     if (search && search.trim() !== '') {
       const q = search.toLowerCase().trim();
       result = result.filter(item => 
@@ -36,7 +75,6 @@ class ListingStore {
       );
     }
 
-    // Sorting
     if (sort) {
       switch (sort) {
         case 'price-asc':
@@ -60,14 +98,69 @@ class ListingStore {
     return result;
   }
 
-  getById(id) {
-    return this.listings.find(item => item.id === id) || null;
+  async getById(id) {
+    if (isDatabaseConnected()) {
+      try {
+        const item = await Listing.findById(id);
+        if (item) return item.toJSON();
+      } catch (err) {
+        // id might be string format (e.g. 'item-101')
+      }
+    }
+    return this.memoryListings.find(item => item.id === id || item._id === id) || null;
   }
 
-  create(itemData) {
+  async create(itemData, user = null) {
+    const sellerInfo = user ? {
+      id: user._id?.toString() || user.id || 'usr-current',
+      name: user.name,
+      department: user.department || 'General Studies',
+      year: user.year || 'Junior',
+      avatar: user.avatar || '',
+      karmaScore: user.karmaScore || 100,
+      itemsReused: user.itemsReused || 0,
+      verifiedStudent: !!user.isCollegeVerified
+    } : (itemData.seller || {
+      id: 'usr-current',
+      name: 'Campus Student',
+      department: 'Environmental Science',
+      year: 'Sophomore',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 180,
+      itemsReused: 2,
+      verifiedStudent: true
+    });
+
+    if (isDatabaseConnected()) {
+      try {
+        const newListing = await Listing.create({
+          title: itemData.title,
+          category: itemData.category || 'stationery',
+          listingType: itemData.listingType || 'sell',
+          price: Number(itemData.price) || 0,
+          originalPrice: Number(itemData.originalPrice) || Number(itemData.price) * 2 || 0,
+          condition: itemData.condition || 'Good',
+          co2SavedKg: Number(itemData.co2SavedKg) || 8.5,
+          description: itemData.description || '',
+          imageUrl: itemData.imageUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+          tags: itemData.tags || [itemData.category],
+          seller: sellerInfo,
+          location: itemData.location || {
+            campusSpot: 'Student Union Eco Hub',
+            building: 'Student Union',
+            safeMeetingZone: true
+          }
+        });
+        return newListing.toJSON();
+      } catch (err) {
+        console.warn('ListingStore DB creation error, falling back to memory:', err.message);
+      }
+    }
+
     const id = `item-${Date.now()}`;
     const newItem = {
       id,
+      _id: id,
       title: itemData.title,
       category: itemData.category || 'stationery',
       listingType: itemData.listingType || 'sell',
@@ -78,16 +171,7 @@ class ListingStore {
       description: itemData.description || '',
       imageUrl: itemData.imageUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
       tags: itemData.tags || [itemData.category],
-      seller: itemData.seller || {
-        id: 'usr-current',
-        name: 'Jordan Miller',
-        department: 'Environmental Science',
-        year: 'Sophomore',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-        karmaScore: 180,
-        itemsReused: 2,
-        verifiedStudent: true
-      },
+      seller: sellerInfo,
       location: itemData.location || {
         campusSpot: 'Student Union Eco Hub',
         building: 'Student Union',
@@ -98,8 +182,7 @@ class ListingStore {
       viewsCount: 1
     };
 
-    // Prepend to top of list
-    this.listings.unshift(newItem);
+    this.memoryListings.unshift(newItem);
     return newItem;
   }
 
@@ -107,15 +190,27 @@ class ListingStore {
     return this.categories;
   }
 
-  getStats() {
-    const totalListings = this.listings.length;
+  async getStats() {
+    let listings = this.memoryListings;
+    if (isDatabaseConnected()) {
+      try {
+        const dbItems = await Listing.find();
+        if (dbItems.length > 0) {
+          listings = dbItems;
+        }
+      } catch (err) {
+        // fallback
+      }
+    }
+
+    const totalListings = listings.length;
     const totalCo2SavedKg = Math.round(
-      this.listings.reduce((sum, item) => sum + (item.co2SavedKg || 0), 0) + 1420 // Added historical campus baseline
+      listings.reduce((sum, item) => sum + (item.co2SavedKg || 0), 0) + 1420
     );
     const totalDollarsSaved = Math.round(
-      this.listings.reduce((sum, item) => sum + (item.originalPrice - item.price), 0) + 12850
+      listings.reduce((sum, item) => sum + (item.originalPrice - item.price), 0) + 12850
     );
-    const freeItemsAvailable = this.listings.filter(i => i.listingType === 'free').length;
+    const freeItemsAvailable = listings.filter(i => i.listingType === 'free').length;
 
     return {
       totalListings,
@@ -123,7 +218,7 @@ class ListingStore {
       totalDollarsSaved,
       freeItemsAvailable,
       activeStudents: 640,
-      treesEquivalent: Math.round(totalCo2SavedKg / 21) // approx 21kg CO2 absorbed per mature tree/year
+      treesEquivalent: Math.round(totalCo2SavedKg / 21)
     };
   }
 }

@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { connectDB, isDatabaseConnected } from './config/db.js';
+import authRoutes from './routes/authRoutes.js';
 import listingRoutes from './routes/listingRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 
@@ -11,7 +13,12 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:5173', 
+    'http://127.0.0.1:5173', 
+    'http://localhost:3000',
+    process.env.CLIENT_URL
+  ].filter(Boolean),
   credentials: true
 }));
 app.use(express.json());
@@ -26,13 +33,15 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
-    service: 'CampusLoop Sustainability API',
-    version: '1.0.0-phase1',
+    service: 'CampusLoop Sustainability & Authentication API',
+    version: '2.0.0-phase2',
+    database: isDatabaseConnected() ? 'connected (MongoDB)' : 'in-memory fallback (active)',
     timestamp: new Date().toISOString()
   });
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/stats', statsRoutes);
 
@@ -54,9 +63,18 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🌱 CampusLoop Sustainability Server running on http://localhost:${PORT}`);
-  console.log(`📚 Sample listings initialized and ready for Phase 1 demo`);
-});
+// Start Server and connect to MongoDB
+const startServer = async () => {
+  // Connect to MongoDB
+  await connectDB();
+
+  app.listen(PORT, () => {
+    console.log(`🌱 CampusLoop Phase 2 Server running on http://localhost:${PORT}`);
+    console.log(`🔒 Authentication & JWT endpoints active at /api/auth`);
+    console.log(`💾 Storage: ${isDatabaseConnected() ? 'Persistent MongoDB Mongoose' : 'In-Memory Resilient Repository'}`);
+  });
+};
+
+startServer();
 
 export default app;

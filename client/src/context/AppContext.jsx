@@ -6,7 +6,11 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [listings, setListings] = useState(INITIAL_LISTINGS);
   const [categories, setCategories] = useState(CATEGORIES);
-  const [user, setUser] = useState(DEMO_USER); // logged in by default for seamless hackathon testing
+  const [token, setToken] = useState(() => localStorage.getItem('campusloop_token') || null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('campusloop_user');
+    return savedUser ? JSON.parse(savedUser) : DEMO_USER;
+  });
   const [savedItemIds, setSavedItemIds] = useState(['item-102', 'item-103']);
   const [selectedItemForModal, setSelectedItemForModal] = useState(null);
   const [toast, setToast] = useState(null);
@@ -20,11 +24,39 @@ export const AppProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Fetch from Express backend on mount
+  // Sync token and user profile on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const checkAuthAndFetchData = async () => {
+      setLoading(true);
+
+      // Verify token with backend if exists
+      const savedToken = localStorage.getItem('campusloop_token');
+      if (savedToken) {
+        try {
+          const authRes = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${savedToken}`
+            }
+          });
+          if (authRes.ok) {
+            const authJson = await authRes.json();
+            if (authJson.success && authJson.data) {
+              setUser(authJson.data);
+              localStorage.setItem('campusloop_user', JSON.stringify(authJson.data));
+            }
+          } else {
+            // Token expired or invalid
+            localStorage.removeItem('campusloop_token');
+            localStorage.removeItem('campusloop_user');
+            setToken(null);
+          }
+        } catch (e) {
+          console.warn('Backend auth verification check offline, using cached session');
+        }
+      }
+
+      // Fetch listings and impact statistics
       try {
-        setLoading(true);
         const [listingsRes, statsRes] = await Promise.allSettled([
           fetch('/api/listings'),
           fetch('/api/stats')
@@ -44,20 +76,20 @@ export const AppProvider = ({ children }) => {
           }
         }
       } catch (err) {
-        console.warn('Backend not reached yet, using robust sample dataset:', err);
+        console.warn('Backend listings/stats request notice:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    checkAuthAndFetchData();
   }, []);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3800);
+    }, 4000);
   };
 
   const toggleSave = (itemId) => {
@@ -69,12 +101,110 @@ export const AppProvider = ({ children }) => {
     });
   };
 
+  // Real backend login integration with JWT storage
+  const login = async (email, password) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Login failed. Please check your credentials.');
+    }
+
+    setToken(data.token);
+    setUser(data.user);
+    localStorage.setItem('campusloop_token', data.token);
+    localStorage.setItem('campusloop_user', JSON.stringify(data.user));
+
+    showToast(data.message || `Welcome back, ${data.user.name}!`, 'success');
+    return data;
+  };
+
+  // Real backend registration integration with JWT storage
+  const register = async (formData) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Registration failed. Please check your inputs.');
+    }
+
+    setToken(data.token);
+    setUser(data.user);
+    localStorage.setItem('campusloop_token', data.token);
+    localStorage.setItem('campusloop_user', JSON.stringify(data.user));
+
+    showToast(data.message, 'success');
+    return data;
+  };
+
+  // Real backend college verification integration
+  const verifyCollege = async ({ studentIdCode, collegeEmail }) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch('/api/auth/verify-college', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ studentIdCode, collegeEmail })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'College verification failed.');
+    }
+
+    setUser(data.data);
+    localStorage.setItem('campusloop_user', JSON.stringify(data.data));
+    showToast('Campus student verification confirmed!', 'success');
+    return data.data;
+  };
+
+  // Real backend logout integration
+  const logout = async () => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (activeToken) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${activeToken}`
+          }
+        });
+      } catch (err) {
+        // continue local cleanup
+      }
+    }
+
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('campusloop_token');
+    localStorage.removeItem('campusloop_user');
+    showToast('Signed out of CampusLoop', 'info');
+  };
+
+  // Create listing linked to authenticated seller
   const addListing = async (newListingData) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
     try {
-      // Send to backend
+      const headers = { 'Content-Type': 'application/json' };
+      if (activeToken) {
+        headers['Authorization'] = `Bearer ${activeToken}`;
+      }
+
       const res = await fetch('/api/listings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(newListingData)
       });
 
@@ -90,40 +220,27 @@ export const AppProvider = ({ children }) => {
       console.warn('Backend request failed, falling back to local state:', e);
     }
 
-    // Local state fallback if backend isn't reached
+    // Local fallback
     const created = {
       id: `item-${Date.now()}`,
       ...newListingData,
       createdAt: new Date().toISOString(),
       viewsCount: 1,
       seller: {
-        id: user?.id || 'usr-current',
+        id: user?._id || user?.id || 'usr-current',
         name: user?.name || 'Student Seller',
         department: user?.department || 'General Studies',
         year: user?.year || 'Junior',
         avatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
         karmaScore: (user?.karmaScore || 100) + 25,
         itemsReused: (user?.itemsReused || 0) + 1,
-        verifiedStudent: true
+        verifiedStudent: !!user?.isCollegeVerified
       }
     };
 
     setListings(prev => [created, ...prev]);
     showToast(`🌱 Listing posted! Thank you for choosing circular reuse!`, 'success');
     return created;
-  };
-
-  const login = (email) => {
-    setUser({
-      ...DEMO_USER,
-      email: email || DEMO_USER.email
-    });
-    showToast(`Welcome back, ${DEMO_USER.name}!`, 'success');
-  };
-
-  const logout = () => {
-    setUser(null);
-    showToast('Signed out of CampusLoop', 'info');
   };
 
   return (
@@ -133,8 +250,11 @@ export const AppProvider = ({ children }) => {
         setListings,
         categories,
         user,
+        token,
         setUser,
         login,
+        register,
+        verifyCollege,
         logout,
         savedItemIds,
         toggleSave,

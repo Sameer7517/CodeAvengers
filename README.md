@@ -1,6 +1,6 @@
 # CodeAvengers — CampusLoop: Campus Exchange & Reuse Marketplace
 
-> **Sustainability Hackathon — Phase 1 Prototype by Team CodeAvengers**  
+> **Sustainability Hackathon — Phase 2: Authentication & MongoDB Integration**  
 > An eco-conscious, hyper-local circular reuse platform connecting university students to buy, sell, donate, and exchange textbooks, lab essentials, calculators, and study supplies while shrinking the collegiate carbon footprint.
 
 ---
@@ -27,26 +27,26 @@ Built with a sustainability-forward visual identity:
 
 ---
 
-## 📦 Project Architecture
+## 📦 Project Architecture (Phase 2)
 
 ```
 CampusLoop/
 ├── client/                     # React + Vite Frontend
 │   ├── src/
 │   │   ├── components/         # Reusable UI Components
-│   │   │   ├── Navbar.jsx      # Responsive nav with impact ticker & mobile drawer
+│   │   │   ├── Navbar.jsx      # Responsive nav with dynamic verification checkmark & ticker
 │   │   │   ├── Footer.jsx      # Eco-mission footer with safety guidelines
-│   │   │   ├── ItemCard.jsx    # Reusable card with carbon offset badge & prices
+│   │   │   ├── ItemCard.jsx    # Reusable card with carbon offset badge & seller status
 │   │   │   └── ItemDetailModal.jsx # Rich item modal with campus pickup form
 │   │   ├── pages/              # Routed Views
 │   │   │   ├── LandingPage.jsx       # Mission hero, live impact scoreboard, CTAs
 │   │   │   ├── MarketplacePage.jsx   # Search, category pills, type tabs, sorting
 │   │   │   ├── ItemDetailPage.jsx    # Deep-linkable item page layout
 │   │   │   ├── CreateListingPage.jsx # Form with live carbon savings calculator
-│   │   │   ├── AuthPage.jsx          # Login/Register UI + 1-Click Demo Sign-In
-│   │   │   └── DashboardPage.jsx     # Personal Eco-Karma, listings, pickup requests
+│   │   │   ├── AuthPage.jsx          # Live JWT login/register + validation alerts + demo shortcuts
+│   │   │   └── DashboardPage.jsx     # Personal Eco-Karma, verified status, listings, pickup proposals
 │   │   ├── context/
-│   │   │   └── AppContext.jsx  # Global state, backend sync, wishlist, notifications
+│   │   │   └── AppContext.jsx  # Global state, JWT storage, backend auth sync, notifications
 │   │   ├── data/
 │   │   │   └── sampleData.js   # Client fallback sample dataset & demo profile
 │   │   ├── App.jsx             # React Router route registry
@@ -56,137 +56,196 @@ CampusLoop/
 │   ├── vite.config.js          # Vite config with API proxy to port 5000
 │   └── package.json
 │
-├── server/                     # Express Backend
+├── server/                     # Express + MongoDB + Mongoose Backend
 │   ├── src/
-│   │   ├── data/               # Isolated Demo/Sample Data Sources
-│   │   │   ├── categories.js   # Campus categories with carbon multipliers
-│   │   │   └── sampleListings.js # High-fidelity sample listings (textbooks, tech, lab gear)
-│   │   ├── services/
-│   │   │   └── listingStore.js # Data-access repository isolating sample data from DB
+│   │   ├── config/
+│   │   │   └── db.js           # Mongoose connection manager with offline resilience
+│   │   ├── models/
+│   │   │   ├── User.js         # Mongoose User model with bcrypt hashing & college domain check
+│   │   │   └── Listing.js      # Mongoose Listing model with eco metrics & location
+│   │   ├── middleware/
+│   │   │   ├── authMiddleware.js         # JWT protection middleware for private routes
+│   │   │   └── optionalAuthMiddleware.js # Extracts user if token present without blocking guests
 │   │   ├── controllers/
+│   │   │   ├── authController.js    # Register, login, profile, verification, logout
 │   │   │   ├── listingController.js # Listing retrieval, creation, category APIs
 │   │   │   └── statsController.js   # Sustainability impact calculations
 │   │   ├── routes/
+│   │   │   ├── authRoutes.js    # /api/auth
 │   │   │   ├── listingRoutes.js # /api/listings
 │   │   │   └── statsRoutes.js   # /api/stats
+│   │   ├── services/
+│   │   │   ├── listingStore.js      # Mongoose-backed repository with memory fallback
+│   │   │   └── inMemoryUserStore.js # In-memory user repository for zero-setup local dev
+│   │   ├── scripts/
+│   │   │   └── seed.js         # Documented seed script for demo accounts & realistic listings
+│   │   ├── utils/
+│   │   │   └── token.js        # JWT generation and verification helpers
 │   │   └── server.js           # Express app, CORS, error handling, health check
+│   ├── tests/
+│   │   └── auth.test.js        # 23-assertion automated auth & protected routes test suite
+│   ├── .env.example            # Documented environment variable template (no real secrets)
+│   ├── .env                    # Local development configuration
 │   └── package.json
 │
 ├── package.json                # Root orchestration scripts
 └── README.md
 ```
 
-### 🛡️ Clean Separation of Demo vs. Real Database Data
-In accordance with production best practices, demo/sample records are strictly isolated in `server/src/data/sampleListings.js`. The backend queries exclusively through `server/src/services/listingStore.js`. In Phase 2, this store will connect directly to MongoDB or PostgreSQL without altering route handlers or frontend contracts.
+---
+
+## 🎓 College Verification Policy
+
+> **"Do not falsely label users as college-verified without implementing verification."**
+
+CampusLoop enforces transparent, real verification:
+1. **Collegiate Domain Check:**  
+   During registration, the backend checks whether the user's email ends in an accredited academic institution domain:
+   - Matches: `.edu`, `.ac.uk`, `.edu.in`, `.ac.in`, `.edu.*`, `.ac.*`, or `@campus.edu`.
+   - **Result:** `isCollegeVerified: true`, `verificationStatus: 'verified'`, `verificationMethod: 'institutional_email'`. Displays the green **`.edu Verified Student`** shield.
+2. **Generic Email Accounts:**  
+   Users who sign up with non-collegiate email addresses (`@gmail.com`, `@yahoo.com`, etc.):
+   - **Result:** `isCollegeVerified: false`, `verificationStatus: 'unverified'`, `verificationMethod: 'none'`.
+   - Displays an amber **`⚠️ Unverified Student`** badge.
+   - Provides an interactive verification prompt in the Student Dashboard where users can enter their verified campus student ID code to upgrade their trust status.
 
 ---
 
-## 🚀 Getting Started
+## 🔑 Environment Variables Setup
 
-### Prerequisites
-- **Node.js**: v18.0.0 or higher (Tested on Node v24)
-- **npm**: v9.0.0 or higher
+Configuration parameters are stored in `server/.env`. A clean template is provided in `server/.env.example`:
+
+```bash
+# server/.env.example
+PORT=5000
+NODE_ENV=development
+
+# MongoDB Connection String (Local MongoDB or MongoDB Atlas)
+MONGODB_URI=mongodb://localhost:27017/campusloop
+
+# JWT Authentication Secret and Expiration
+JWT_SECRET=replace_with_a_secure_random_secret_in_production
+JWT_EXPIRES_IN=7d
+
+# CORS Allowed Client URL
+CLIENT_URL=http://localhost:5173
+```
 
 ---
+
+## 👥 Demo Accounts & Seeding Workflow
+
+To populate MongoDB with realistic demo accounts and sample campus exchange listings:
+
+```powershell
+# From project root:
+npm run seed
+
+# Or from server directory:
+cd server
+npm run seed
+```
+
+### Pre-Seeded Accounts:
+
+| Role | Email | Password | Verification Status | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Verified Student** | `s.rodriguez@campus.edu` | `CampusLoop2026!` | ✅ Verified (`.edu`) | 485 Karma, 8 items reused |
+| **Verified Student** | `maya.lin@campus.edu` | `CampusLoop2026!` | ✅ Verified (`.edu`) | Biology pre-med donor |
+| **Unverified Student** | `guest.student@gmail.com` | `CampusLoop2026!` | ⚠️ Unverified (`gmail`) | Demonstrates accurate unverified handling |
+
+> **Tip:** The Login page includes **1-Click Test Buttons** that instantly sign in with either the verified student or the unverified account.
+
+---
+
+## 🚀 Running the Project
 
 ### Option 1: Quick Start (Two Terminals)
 
-#### 1. Start the Backend API (Port 5000)
+#### Terminal 1 — Start the Backend (Port 5000):
 ```powershell
 cd server
 npm install
 npm run dev
 ```
-Backend runs at: `http://localhost:5000`  
-Health check: `http://localhost:5000/api/health`
 
-#### 2. Start the Frontend Client (Port 5173)
+#### Terminal 2 — Start the Frontend (Port 5173):
 ```powershell
 cd client
 npm install
 npm run dev
 ```
-Frontend runs at: `http://localhost:5173`
+
+Visit the app at: **`http://localhost:5173`**
 
 ---
 
 ### Option 2: Run from Root Directory
-From the project root (`CampusLoop/`):
 
 ```powershell
-# Install both client and server dependencies
+# 1. Install all dependencies
 npm run install:all
 
-# In Terminal 1 - start server:
+# 2. Seed database (optional, when MongoDB is active)
+npm run seed
+
+# 3. Start backend in Terminal 1
 npm run dev:server
 
-# In Terminal 2 - start client:
+# 4. Start frontend in Terminal 2
 npm run dev:client
 ```
 
 ---
 
-## 📡 Backend API Endpoints
+## 🧪 Automated Testing
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Health check and server status |
-| `GET` | `/api/listings` | Fetch listings (supports `?search=`, `?category=`, `?type=`, `?sort=`) |
-| `GET` | `/api/listings/:id` | Fetch detailed listing by ID |
-| `POST` | `/api/listings` | Create a new listing with instant carbon calculation |
-| `GET` | `/api/listings/categories` | Retrieve categories with carbon offset factors |
-| `GET` | `/api/stats` | Aggregated carbon, dollar, and tree metrics |
+CampusLoop includes an end-to-end automated test suite for backend authentication, password hashing, JWT issuance, college verification checks, and protected routes:
 
----
+```powershell
+# From project root:
+npm run test:server
 
-## ✨ Features Implemented in Phase 1
+# Or from server directory:
+cd server
+npm test
+```
 
-1. **Sustainability Landing Page:**
-   - Hero with zero-waste mission and student trust badges.
-   - Live carbon scoreboard: CO₂ averted (kg), student dollars saved ($), mature tree absorption equivalents, and total recirculated items.
-   - Interactive 4-category equipment spotlights.
-   - "How Circular Reuse Works" step-by-step explainer.
-
-2. **Responsive Navigation & Footer:**
-   - Sticky navbar with live sustainability ticker and mobile responsive drawer.
-   - Quick filters, profile badge, and prominent "+ List an Item" CTA.
-   - Footer with UN SDG #12 alignment, safe meeting zone policies, and campus pledges.
-
-3. **Marketplace & Filter Suite:**
-   - Instant search across titles, descriptions, course codes (e.g. `CHEM 111`, `BIOL 1101`), and buildings.
-   - Horizontal category pill filters (Textbooks, Calculators, Lab Coats, Stationery, Dorm, Free Giveaways).
-   - Exchange-type tabs (`All`, `For Sale`, `Free Giveaways 🎁`, `Trades / Swaps 🔄`).
-   - Condition filter (`Like New`, `Good`, `Fair`).
-   - Smart sorting: **Highest CO₂ Saved 🌱**, Price Low-to-High, Price High-to-Low, Newest.
-
-4. **Reusable Item Cards & Detail Layout:**
-   - Realistic sample listings covering **Textbooks** (Campbell Biology, Stewart Calculus), **Calculators** (TI-84 Plus CE, Casio ClassWiz), **Lab Coats & Goggles** (100% cotton PPE), and **Stationery** (Rotring Drafting Set, Micron Art Bundle).
-   - Environmental footprint badges (`-14.2 kg CO₂`).
-   - Campus Safe Exchange Zone location tags (Du Bois Library 2nd Fl, Engineering Commons, Science Lobby).
-   - Pickup proposal form with preset time slots (`Today after 3 PM`, `Tomorrow @ 11 AM`).
-
-5. **Create Listing Flow:**
-   - Category picker with dynamic real-time CO₂ diversion preview.
-   - Price vs original bookstore retail price comparison.
-   - Safe campus meeting spot selector.
-   - One-click realistic preset image selectors or custom image URL input.
-
-6. **Authentication UI:**
-   - Dedicated .edu student sign-in and registration tabs.
-   - University sustainability pledge agreement.
-   - **1-Click Demo Login** button for judges to test authenticated features without typing.
-
-7. **Student Eco Dashboard:**
-   - Personal Carbon Scorecard (`64.2 kg CO₂ diverted`, `$320 saved`, `485 Eco-Karma`).
-   - Active listings management.
-   - Saved items wishlist.
-   - Pickup proposals preview with Accept/Reschedule actions.
-   - Printable "Certificate of Circular Stewardship" badge.
+### Test Suite Coverage (23 Assertions):
+- [x] Health endpoint status check
+- [x] Student registration with collegiate `.edu` email (`isCollegeVerified === true`)
+- [x] Student registration with personal email (`isCollegeVerified === false`)
+- [x] Duplicate email registration rejection (`409 Conflict`)
+- [x] Invalid inputs rejection (`400 Bad Request`)
+- [x] Successful login with valid credentials & JWT issuance
+- [x] Wrong password rejection (`401 Unauthorized`)
+- [x] Non-existent email rejection (`401 Unauthorized`)
+- [x] Protected route access with valid Bearer JWT (`GET /api/auth/me`)
+- [x] Protected route rejection without token (`401 Unauthorized`)
+- [x] Protected route rejection with corrupted token (`401 Unauthorized`)
+- [x] Profile update via protected route (`PUT /api/auth/profile`)
+- [x] Logout confirmation (`POST /api/auth/logout`)
 
 ---
 
-## 🔮 Roadmap for Phase 2
-- Persistent database integration (MongoDB Atlas / PostgreSQL via Prisma).
-- University SSO (.edu OAuth / SAML).
-- WebSockets for real-time buyer-seller safe meetup coordination.
-- Automated OCR scanning of textbook ISBN codes for instantaneous listing creation.
+## 📡 Complete API Endpoint Reference
+
+### Authentication Routes (`/api/auth`)
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | No | Register new student with bcrypt hashing & domain check |
+| `POST` | `/api/auth/login` | No | Login student and return signed JWT token |
+| `GET` | `/api/auth/me` | **Yes (Bearer JWT)** | Fetch authenticated student profile |
+| `PUT` | `/api/auth/profile` | **Yes (Bearer JWT)** | Update profile (department, year, campus, avatar) |
+| `POST` | `/api/auth/verify-college` | **Yes (Bearer JWT)** | Verify collegiate status via campus ID or .edu email |
+| `POST` | `/api/auth/logout` | No | Confirm logout |
+
+### Marketplace & Impact Routes
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | No | API health & database connection status |
+| `GET` | `/api/listings` | No | Browse items with search, category, type, and sort filters |
+| `GET` | `/api/listings/:id` | No | Get single listing details |
+| `POST` | `/api/listings` | Optional | Post sustainable item (attaches authenticated seller if logged in) |
+| `GET` | `/api/listings/categories` | No | Category metadata with CO₂ offset rates |
+| `GET` | `/api/stats` | No | Live aggregated campus impact scoreboard |

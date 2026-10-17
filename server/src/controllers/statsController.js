@@ -1,8 +1,8 @@
 import { listingStore } from '../services/listingStore.js';
 
-export const getImpactStats = (req, res) => {
+export const getImpactStats = async (req, res) => {
   try {
-    const stats = listingStore.getStats();
+    const stats = await listingStore.getStats();
     res.json({
       success: true,
       data: stats

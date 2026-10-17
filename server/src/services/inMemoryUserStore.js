@@ -1,0 +1,175 @@
+import bcrypt from 'bcryptjs';
+import { checkCollegeDomain } from '../models/User.js';
+
+/**
+ * Resilient In-Memory User Store
+ * Acts as an automated fallback when local MongoDB daemon is not running,
+ * ensuring zero-friction local testing while mirroring Mongoose schema operations.
+ */
+class InMemoryUserStore {
+  constructor() {
+    this.users = [];
+    this.initDefaultUsers();
+  }
+
+  async initDefaultUsers() {
+    // Hash passwords for default demo accounts
+    const hashedPassword = await bcrypt.hash('CampusLoop2026!', 10);
+
+    this.users = [
+      {
+        _id: '67b36f1c24e65a001a111111',
+        id: '67b36f1c24e65a001a111111',
+        name: 'Samira Rodriguez',
+        email: 's.rodriguez@campus.edu',
+        password: hashedPassword,
+        department: 'Environmental Studies',
+        year: 'Junior (3rd Year)',
+        campus: 'North Campus',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        karmaScore: 485,
+        itemsReused: 8,
+        co2DivertedKg: 64.2,
+        dollarsSaved: 320,
+        isCollegeVerified: true,
+        verificationStatus: 'verified',
+        verificationMethod: 'institutional_email',
+        verifiedAt: new Date('2026-09-01'),
+        badges: [
+          { title: 'Zero Waste Champion', icon: 'Leaf', desc: 'Diverted >50kg CO2 from campus waste' },
+          { title: 'STEM Recycler', icon: 'Cpu', desc: 'Shared lab & calculator tech with peers' },
+          { title: 'Trusted Exchanger', icon: 'ShieldCheck', desc: '100% positive campus safe-zone pickups' }
+        ],
+        savedItems: ['item-102', 'item-103'],
+        createdAt: new Date('2026-09-01'),
+        updatedAt: new Date('2026-10-15')
+      },
+      {
+        _id: '67b36f1c24e65a001a222222',
+        id: '67b36f1c24e65a001a222222',
+        name: 'Maya Lin',
+        email: 'maya.lin@campus.edu',
+        password: hashedPassword,
+        department: 'Biological Sciences',
+        year: 'Junior (3rd Year)',
+        campus: 'Science Quad',
+        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+        karmaScore: 485,
+        itemsReused: 7,
+        co2DivertedKg: 42.5,
+        dollarsSaved: 260,
+        isCollegeVerified: true,
+        verificationStatus: 'verified',
+        verificationMethod: 'institutional_email',
+        verifiedAt: new Date('2026-09-05'),
+        badges: [
+          { title: 'Pre-Med Recycler', icon: 'FlaskConical', desc: 'Shared textbooks & dissection kits' }
+        ],
+        savedItems: [],
+        createdAt: new Date('2026-09-05'),
+        updatedAt: new Date('2026-10-14')
+      },
+      {
+        _id: '67b36f1c24e65a001a333333',
+        id: '67b36f1c24e65a001a333333',
+        name: 'Guest Non-College User',
+        email: 'guest.student@gmail.com',
+        password: hashedPassword,
+        department: 'General Studies',
+        year: 'Freshman (1st Year)',
+        campus: 'Off-Campus',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+        karmaScore: 50,
+        itemsReused: 0,
+        co2DivertedKg: 0,
+        dollarsSaved: 0,
+        isCollegeVerified: false, // NOT verified because email is @gmail.com
+        verificationStatus: 'unverified',
+        verificationMethod: 'none',
+        verifiedAt: null,
+        badges: [],
+        savedItems: [],
+        createdAt: new Date('2026-10-10'),
+        updatedAt: new Date('2026-10-10')
+      }
+    ];
+  }
+
+  findByEmail(email) {
+    if (!email) return null;
+    return this.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+  }
+
+  findById(id) {
+    if (!id) return null;
+    const user = this.users.find(u => u._id === id || u.id === id);
+    if (!user) return null;
+    // Return sanitized copy
+    const { password, ...safeUser } = user;
+    return safeUser;
+  }
+
+  findByIdWithPassword(id) {
+    if (!id) return null;
+    return this.users.find(u => u._id === id || u.id === id) || null;
+  }
+
+  async create(userData) {
+    const existing = this.findByEmail(userData.email);
+    if (existing) {
+      const error = new Error('A student account with this email address already exists');
+      error.code = 11000;
+      throw error;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(userData.password, salt);
+
+    const isVerified = checkCollegeDomain(userData.email);
+    const id = `usr-${Date.now()}`;
+
+    const newUser = {
+      _id: id,
+      id: id,
+      name: userData.name,
+      email: userData.email.toLowerCase().trim(),
+      password: hashedPassword,
+      department: userData.department || 'General Studies',
+      year: userData.year || 'Junior (3rd Year)',
+      campus: userData.campus || 'Main Campus',
+      avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      karmaScore: 100,
+      itemsReused: 0,
+      co2DivertedKg: 0,
+      dollarsSaved: 0,
+      isCollegeVerified: isVerified,
+      verificationStatus: isVerified ? 'verified' : 'unverified',
+      verificationMethod: isVerified ? 'institutional_email' : 'none',
+      verifiedAt: isVerified ? new Date() : null,
+      badges: isVerified ? [{ title: 'Verified Student', icon: 'ShieldCheck', desc: 'Confirmed .edu address' }] : [],
+      savedItems: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    this.users.push(newUser);
+    const { password, ...safeUser } = newUser;
+    return safeUser;
+  }
+
+  update(id, updateData) {
+    const index = this.users.findIndex(u => u._id === id || u.id === id);
+    if (index === -1) return null;
+
+    this.users[index] = {
+      ...this.users[index],
+      ...updateData,
+      updatedAt: new Date()
+    };
+
+    const { password, ...safeUser } = this.users[index];
+    return safeUser;
+  }
+}
+
+export const inMemoryUserStore = new InMemoryUserStore();
