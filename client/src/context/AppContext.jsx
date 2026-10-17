@@ -309,6 +309,209 @@ export const AppProvider = ({ children }) => {
     return json;
   };
 
+  // Phase 4: Submit formal exchange request (Swap, Give Away, or Sell inquiry)
+  const createExchangeRequest = async ({ listingId, offeredListingId, proposedMeetingTime, proposedSpot, message }) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) {
+      throw new Error('Please sign in to submit an exchange or pickup request.');
+    }
+
+    const res = await fetch('/api/exchanges', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({
+        listingId,
+        offeredListingId: offeredListingId || undefined,
+        proposedMeetingTime,
+        proposedSpot,
+        message
+      })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Could not submit exchange proposal.');
+    }
+
+    showToast('🌱 Proposal dispatched! Check your dashboard for updates.', 'success');
+    return json.data;
+  };
+
+  // Phase 4: Fetch user's incoming and outgoing exchange requests
+  const fetchExchangeRequests = async ({ role = 'all', status } = {}) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) return [];
+
+    const params = new URLSearchParams();
+    if (role) params.set('role', role);
+    if (status && status !== 'all') params.set('status', status);
+
+    const res = await fetch(`/api/exchanges?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${activeToken}` }
+    });
+
+    const json = await res.json();
+    if (res.ok && json.success) {
+      return json.data || [];
+    }
+    return [];
+  };
+
+  // Phase 4: Owner accepts exchange request (reserves items)
+  const acceptExchangeRequest = async (requestId) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/exchanges/${requestId}/accept`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${activeToken}` }
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Could not accept proposal.');
+    }
+
+    showToast('Exchange proposal accepted! Items are now reserved.', 'success');
+    // Refresh listings to show updated reserved badge
+    try {
+      const lRes = await fetch('/api/listings');
+      const lJson = await lRes.json();
+      if (lJson.success) setListings(lJson.data);
+    } catch (e) {}
+
+    return json.data;
+  };
+
+  // Phase 4: Owner declines exchange request
+  const rejectExchangeRequest = async (requestId, reason = '') => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/exchanges/${requestId}/reject`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Could not decline proposal.');
+    }
+
+    showToast('Exchange proposal declined.', 'info');
+    return json.data;
+  };
+
+  // Phase 4: Requester cancels pending exchange request
+  const cancelExchangeRequest = async (requestId) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/exchanges/${requestId}/cancel`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${activeToken}` }
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Could not cancel proposal.');
+    }
+
+    showToast('Proposal cancelled.', 'info');
+    return json.data;
+  };
+
+  // Phase 4: Handover confirmation and completion (marks completed and awards karma)
+  const completeExchangeRequest = async (requestId) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    const res = await fetch(`/api/exchanges/${requestId}/complete`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${activeToken}` }
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Could not complete exchange.');
+    }
+
+    showToast('🎉 Handover confirmed! +50 Eco-Karma awarded for circular reuse!', 'success');
+    
+    // Refresh user profile & listings
+    if (user) {
+      setUser(prev => ({
+        ...prev,
+        karmaScore: (prev.karmaScore || 100) + 50,
+        itemsReused: (prev.itemsReused || 0) + 1
+      }));
+    }
+
+    try {
+      const lRes = await fetch('/api/listings');
+      const lJson = await lRes.json();
+      if (lJson.success) setListings(lJson.data);
+    } catch (e) {}
+
+    return json.data;
+  };
+
+  // Phase 4: In-app student notifications
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  const fetchNotifications = async () => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) return;
+
+    try {
+      const res = await fetch('/api/notifications', {
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setNotifications(json.data || []);
+        setUnreadNotifCount(json.unreadCount || 0);
+      }
+    } catch (err) {}
+  };
+
+  const markNotificationAsRead = async (notifId) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) return;
+
+    try {
+      await fetch(`/api/notifications/${notifId}/read`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      setNotifications(prev => prev.map(n => (n.id === notifId ? { ...n, read: true } : n)));
+      setUnreadNotifCount(prev => Math.max(0, prev - 1));
+    } catch (e) {}
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) return;
+
+    try {
+      await fetch('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadNotifCount(0);
+    } catch (e) {}
+  };
+
+  // Poll / fetch notifications on mount & token changes
+  useEffect(() => {
+    if (token) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
+
   // Fetch filtered listings from backend with pagination
   const fetchListingsApi = async (params = {}) => {
     const cleanParams = new URLSearchParams();
@@ -351,6 +554,17 @@ export const AppProvider = ({ children }) => {
         updateListingStatus,
         deleteListing,
         requestExchange,
+        createExchangeRequest,
+        fetchExchangeRequests,
+        acceptExchangeRequest,
+        rejectExchangeRequest,
+        cancelExchangeRequest,
+        completeExchangeRequest,
+        notifications,
+        unreadNotifCount,
+        fetchNotifications,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
         fetchListingsApi
       }}
     >

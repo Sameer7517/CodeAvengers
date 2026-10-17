@@ -11,13 +11,27 @@ import {
   Bookmark, 
   LayoutDashboard,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Bell,
+  CheckCheck,
+  CheckCircle,
+  ArrowRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Navbar() {
-  const { user, logout, savedItemIds, stats } = useApp();
+  const { 
+    user, 
+    logout, 
+    savedItemIds, 
+    stats,
+    notifications,
+    unreadNotifCount,
+    markNotificationAsRead,
+    markAllNotificationsAsRead
+  } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
@@ -117,7 +131,118 @@ export default function Navbar() {
             </Link>
 
             {user ? (
-              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                {/* Notification Bell Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    className="p-2 text-slate-500 hover:text-forest-800 rounded-xl hover:bg-forest-50 transition-colors relative"
+                    title="In-App Notifications"
+                    aria-label="View notifications"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadNotifCount > 0 && (
+                      <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center animate-pulse shadow-xs">
+                        {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Notification Dropdown Panel */}
+                  {notificationsOpen && (
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-sage-200/90 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                      <div className="p-3.5 bg-forest-900 text-white flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-sage-300" />
+                          <span className="text-xs font-bold uppercase tracking-wider">Campus Notifications</span>
+                          {unreadNotifCount > 0 && (
+                            <span className="bg-emerald-500 text-forest-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                              {unreadNotifCount} new
+                            </span>
+                          )}
+                        </div>
+                        {unreadNotifCount > 0 && (
+                          <button
+                            onClick={async () => {
+                              await markAllNotificationsAsRead();
+                            }}
+                            className="text-[11px] text-sage-200 hover:text-white flex items-center gap-1 font-semibold underline underline-offset-2"
+                          >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                        {notifications && notifications.length > 0 ? (
+                          notifications.map((notif) => (
+                            <div
+                              key={notif.id}
+                              onClick={async () => {
+                                if (!notif.read) {
+                                  await markNotificationAsRead(notif.id);
+                                }
+                                setNotificationsOpen(false);
+                              }}
+                              className={`p-3.5 text-left hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-3 ${
+                                !notif.read ? 'bg-forest-50/40' : ''
+                              }`}
+                            >
+                              <div className="mt-0.5 shrink-0">
+                                {notif.type?.includes('swap') ? (
+                                  <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  </div>
+                                ) : notif.type?.includes('completed') ? (
+                                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                  </div>
+                                ) : (
+                                  <div className="w-7 h-7 rounded-lg bg-sage-100 text-forest-800 flex items-center justify-center">
+                                    <Leaf className="w-3.5 h-3.5" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1">
+                                  <p className="text-xs font-bold text-slate-900 truncate">{notif.title}</p>
+                                  {!notif.read && (
+                                    <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">
+                                  {notif.message}
+                                </p>
+                                <span className="text-[10px] text-slate-400 mt-1 block">
+                                  {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center px-4 space-y-1">
+                            <Leaf className="w-6 h-6 text-emerald-500 mx-auto" />
+                            <p className="text-xs font-bold text-slate-700">All caught up!</p>
+                            <p className="text-[11px] text-slate-400">No active notifications for your listings or proposals.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="text-xs font-bold text-forest-700 hover:text-forest-900 inline-flex items-center gap-1"
+                        >
+                          <span>Open Eco Dashboard & Proposals</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <Link
                   to="/dashboard"
                   className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-left"
@@ -234,6 +359,23 @@ export default function Navbar() {
             >
               🌱 My Eco Impact Dashboard
             </Link>
+            {user && (
+              <Link
+                to="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-50"
+              >
+                <span className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-forest-700" />
+                  Notifications
+                </span>
+                {unreadNotifCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white">
+                    {unreadNotifCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </nav>
 
           <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">

@@ -5,6 +5,8 @@ import { connectDB, isDatabaseConnected } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import listingRoutes from './routes/listingRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import exchangeRoutes from './routes/exchangeRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 dotenv.config();
 
@@ -33,8 +35,8 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
-    service: 'CampusLoop Sustainability & Authentication API',
-    version: '2.0.0-phase2',
+    service: 'CampusLoop Sustainability & Exchange API',
+    version: '4.0.0-phase4',
     database: isDatabaseConnected() ? 'connected (MongoDB)' : 'in-memory fallback (active)',
     timestamp: new Date().toISOString()
   });
@@ -44,6 +46,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/exchanges', exchangeRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Fallback 404 handler
 app.use((req, res) => {
@@ -69,9 +73,11 @@ export const startServer = async () => {
   await connectDB();
 
   return app.listen(PORT, () => {
-    console.log(`🌱 CampusLoop Phase 3 Server running on http://localhost:${PORT}`);
+    console.log(`🌱 CampusLoop Phase 4 Server running on http://localhost:${PORT}`);
     console.log(`🔒 Authentication & JWT endpoints active at /api/auth`);
     console.log(`🛍️ Marketplace CRUD & Discovery active at /api/listings`);
+    console.log(`🔄 Exchange Requests & Donations active at /api/exchanges`);
+    console.log(`🔔 In-App Notifications active at /api/notifications`);
     console.log(`💾 Storage: ${isDatabaseConnected() ? 'Persistent MongoDB Mongoose' : 'In-Memory Resilient Repository'}`);
   });
 };
@@ -81,4 +87,5 @@ if (process.argv[1]?.endsWith('server.js')) {
   startServer();
 }
 
+export { app };
 export default app;

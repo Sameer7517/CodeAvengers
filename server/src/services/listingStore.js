@@ -465,6 +465,27 @@ class ListingStore {
   }
 
   /**
+   * Internal status update method for system workflows (acceptance/completion)
+   */
+  async internalUpdateStatus(id, newStatus) {
+    if (isDatabaseConnected()) {
+      try {
+        await Listing.findByIdAndUpdate(id, { status: newStatus });
+      } catch (err) {
+        console.warn('DB internalUpdateStatus fallback:', err.message);
+      }
+    }
+
+    const index = this.memoryListings.findIndex(i => i.id === id || i._id?.toString() === id);
+    if (index !== -1) {
+      this.memoryListings[index].status = newStatus;
+      this.memoryListings[index].updatedAt = new Date().toISOString();
+      return this.memoryListings[index];
+    }
+    return null;
+  }
+
+  /**
    * Delete a listing with strict ownership check
    */
   async delete(id, user) {
