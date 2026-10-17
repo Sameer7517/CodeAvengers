@@ -36,9 +36,9 @@ export default function CreateListingPage() {
     desiredItems: '',
     condition: 'Like New',
     description: '',
-    campus: 'Campus University',
-    campusSpot: 'Main Library 2nd Floor Cafe',
-    building: 'W.E.B. Du Bois Library',
+    campus: 'COEP Technological University, Pune',
+    campusSpot: 'Central Reading Hall (2nd Floor)',
+    building: 'COEP Main Library',
     imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
     tags: ''
   });
@@ -49,11 +49,11 @@ export default function CreateListingPage() {
 
   // Preset images for realistic demo creation
   const demoImages = [
-    { label: 'Textbook', url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80' },
-    { label: 'Calculator', url: 'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?auto=format&fit=crop&w=800&q=80' },
-    { label: 'Lab Coat', url: 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=800&q=80' },
-    { label: 'Stationery', url: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=800&q=80' },
-    { label: 'Tech / Hub', url: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80' },
+    { label: 'Nirali Textbook', url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80' },
+    { label: 'Casio Calculator', url: 'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?auto=format&fit=crop&w=800&q=80' },
+    { label: 'Workshop Apron', url: 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=800&q=80' },
+    { label: 'Omega Drafter', url: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=800&q=80' },
+    { label: 'Technical Pubs DSA', url: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&w=800&q=80' },
   ];
 
   // Dynamic CO2 calculation based on category
@@ -123,7 +123,7 @@ export default function CreateListingPage() {
     if (typeNormalized === 'sell') {
       const priceVal = Number(formData.price);
       if (!priceVal || priceVal <= 0) {
-        setError('Please enter a valid price greater than $0 for sell listings.');
+        setError('Please enter a valid price greater than ₹0 for sell listings.');
         return;
       }
     }
@@ -379,17 +379,17 @@ export default function CreateListingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className="block text-xs font-bold text-[var(--color-text)] uppercase tracking-wider mb-1.5">
-                    Your Selling Price ($) *
+                    Your Selling Price (₹) *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[var(--color-text-muted)]">$</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[var(--color-text-muted)]">₹</span>
                     <input
                       type="number"
                       min="1"
                       required
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      placeholder="e.g. 35"
+                      placeholder="e.g. 250"
                       className="w-full pl-8 pr-4 py-3 glass-panel border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] focus:outline-hidden font-semibold"
                     />
                   </div>
@@ -397,19 +397,19 @@ export default function CreateListingPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-[var(--color-text)] uppercase tracking-wider mb-1.5">
-                    Original Retail Price ($)
+                    Original Retail Price (₹)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[var(--color-text-muted)]">$</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[var(--color-text-muted)]">₹</span>
                     <input
                       type="number"
                       value={formData.originalPrice}
                       onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
-                      placeholder="e.g. 150"
+                      placeholder="e.g. 650"
                       className="w-full pl-8 pr-4 py-3 glass-panel border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] focus:outline-hidden"
                     />
                   </div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] mt-1 block">Used to showcase student dollars saved</span>
+                  <span className="text-[11px] text-[var(--color-text-muted)] mt-1 block">Used to showcase student rupees saved</span>
                 </div>
               </div>
             )}
@@ -522,10 +522,11 @@ export default function CreateListingPage() {
                   onChange={(e) => setFormData({ ...formData, building: e.target.value })}
                   className="w-full px-4 py-3 glass-panel border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] focus:outline-hidden font-medium cursor-pointer"
                 >
-                  <option value="W.E.B. Du Bois Library">Main Campus Library</option>
-                  <option value="Student Union Complex">Student Union Atrium</option>
-                  <option value="ISB Science Complex">Science Center South Lobby</option>
-                  <option value="Marston Engineering Hall">Engineering Commons</option>
+                  <option value="COEP Main Library">COEP Central Reading Hall (Pune)</option>
+                  <option value="VJTI Main Quadrangle">VJTI Main Quadrangle (Mumbai)</option>
+                  <option value="PICT Central Campus">PICT Student Center (Pune)</option>
+                  <option value="SPPU Jayakar Library">SPPU Jayakar Library (Pune)</option>
+                  <option value="WCE Administrative Building">Walchand Admin Porch (Sangli)</option>
                 </select>
               </div>
 

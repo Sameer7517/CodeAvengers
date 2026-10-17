@@ -128,25 +128,35 @@ export default function AuthPage() {
           <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
             Test authentication with pre-seeded student accounts:
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
             <button
               type="button"
               disabled={isSubmitting}
               onClick={() => handleDemoLogin('s.rodriguez@campus.edu', 'CampusLoop2026!')}
-              className="py-2 px-3 rounded-xl bg-forest-800 text-white text-[11px] font-bold hover:bg-forest-900 transition-colors shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
+              className="py-2 px-2.5 rounded-xl bg-forest-800 text-white text-[11px] font-bold hover:bg-forest-900 transition-colors shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-sage-300" />
-              <span>Verified Student</span>
+              <span>Tanvi (VJTI)</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => handleDemoLogin('maya.lin@campus.edu', 'CampusLoop2026!')}
+              className="py-2 px-2.5 rounded-xl bg-[#176B4D] text-white text-[11px] font-bold hover:bg-forest-800 transition-colors shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+              <span>Aarav (COEP)</span>
             </button>
 
             <button
               type="button"
               disabled={isSubmitting}
               onClick={() => handleDemoLogin('guest.student@gmail.com', 'CampusLoop2026!')}
-              className="py-2 px-3 rounded-xl bg-white text-slate-700 border border-slate-300 text-[11px] font-bold hover:bg-slate-50 transition-colors shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
+              className="py-2 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-300 text-[11px] font-bold hover:bg-slate-50 transition-colors shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-              <span>Unverified User</span>
+              <span>Omkar (Guest)</span>
             </button>
           </div>
         </div>

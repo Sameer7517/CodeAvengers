@@ -73,7 +73,7 @@ export default function ItemCard({ item, onClick }) {
     }
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#17251D] dark:bg-white text-white dark:text-[#17251D] shadow-xs">
-        ${item.sellingPrice ?? item.price}
+        ₹{item.sellingPrice ?? item.price}
       </span>
     );
   };
@@ -89,12 +89,12 @@ export default function ItemCard({ item, onClick }) {
           : 'hover:border-[#176B4D]/40 dark:hover:border-[#72D6A2]/40'
       }`}
     >
-      {/* Top Media Container */}
-      <div className="relative aspect-4/3 w-full bg-slate-100 dark:bg-slate-900 overflow-hidden">
+      {/* Top Media Container - Strictly Uniform Image Dimensions */}
+      <div className="relative aspect-[4/3] w-full bg-slate-100 dark:bg-slate-900 overflow-hidden shrink-0">
         <img
           src={item.imageUrl || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'}
           alt={item.title}
-          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
 
@@ -167,12 +167,12 @@ export default function ItemCard({ item, onClick }) {
               </div>
             ) : (
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-extrabold text-[var(--color-text)]">${item.sellingPrice ?? item.price}</span>
+                <span className="text-xl font-extrabold text-[var(--color-text)]">₹{item.sellingPrice ?? item.price}</span>
                 {(item.originalPrice || 0) > (item.sellingPrice ?? item.price) && (
                   <>
-                    <span className="text-xs text-[var(--color-text-muted)] line-through">${item.originalPrice}</span>
+                    <span className="text-xs text-[var(--color-text-muted)] line-through">₹{item.originalPrice}</span>
                     <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                      Save ${item.originalPrice - (item.sellingPrice ?? item.price)}
+                      Save ₹{item.originalPrice - (item.sellingPrice ?? item.price)}
                     </span>
                   </>
                 )}

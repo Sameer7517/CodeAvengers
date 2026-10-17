@@ -186,60 +186,60 @@ export default function LandingPage() {
                     </span>
                   </div>
 
-                  {/* Collage Grid of Essentials */}
+                  {/* Collage Grid of Essentials - Strictly Uniform Image Containers */}
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Item 1: Textbook */}
-                    <div className="group/item relative rounded-xl overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800">
+                    {/* Item 1: Nirali Textbook */}
+                    <div className="group/item relative rounded-xl overflow-hidden aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800">
                       <img 
                         src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80" 
-                        alt="Campbell Biology Textbook"
+                        alt="Nirali Engineering Mathematics (M1)"
                         className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-2.5 flex flex-col justify-end text-white">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Textbook</span>
-                        <p className="text-xs font-bold leading-tight line-clamp-1">Campbell Biology 12th Ed.</p>
-                        <span className="text-[11px] font-extrabold text-white mt-0.5">$38 <span className="line-through text-slate-400 font-normal">$165</span></span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Nirali Prakashan</span>
+                        <p className="text-xs font-bold leading-tight line-clamp-1">Engineering Maths (M1)</p>
+                        <span className="text-[11px] font-extrabold text-white mt-0.5">₹240 <span className="line-through text-slate-400 font-normal">₹650</span></span>
                       </div>
                     </div>
 
-                    {/* Item 2: Calculator */}
-                    <div className="group/item relative rounded-xl overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800">
+                    {/* Item 2: Casio Calculator */}
+                    <div className="group/item relative rounded-xl overflow-hidden aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800">
                       <img 
                         src="https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?auto=format&fit=crop&w=600&q=80" 
-                        alt="TI-84 Plus CE Graphing Calculator"
+                        alt="Casio fx-991EX ClassWiz Calculator"
                         className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-2.5 flex flex-col justify-end text-white">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Calculator</span>
-                        <p className="text-xs font-bold leading-tight line-clamp-1">TI-84 Plus CE Color</p>
-                        <span className="text-[11px] font-extrabold text-white mt-0.5">$55 <span className="line-through text-slate-400 font-normal">$140</span></span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Casio Calculator</span>
+                        <p className="text-xs font-bold leading-tight line-clamp-1">Casio fx-991EX ClassWiz</p>
+                        <span className="text-[11px] font-extrabold text-white mt-0.5">₹850 <span className="line-through text-slate-400 font-normal">₹1,695</span></span>
                       </div>
                     </div>
 
-                    {/* Item 3: Lab Coat & Goggles */}
-                    <div className="group/item relative rounded-xl overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800">
+                    {/* Item 3: Workshop Boiler Apron & Goggles */}
+                    <div className="group/item relative rounded-xl overflow-hidden aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800">
                       <img 
                         src="https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=600&q=80" 
-                        alt="Chemistry Lab Coat + Goggles"
+                        alt="Engineering Workshop Boiler Apron + Splash Goggles"
                         className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-2.5 flex flex-col justify-end text-white">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Lab Gear</span>
-                        <p className="text-xs font-bold leading-tight line-clamp-1">Cotton Coat + Splash Kit</p>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Workshop PPE</span>
+                        <p className="text-xs font-bold leading-tight line-clamp-1">Boiler Apron + Goggles</p>
                         <span className="text-[11px] font-extrabold text-emerald-400 mt-0.5">Free Give Away 🎁</span>
                       </div>
                     </div>
 
-                    {/* Item 4: Stationery & Drafting */}
-                    <div className="group/item relative rounded-xl overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800">
+                    {/* Item 4: Omega Mini Drafter & Tube */}
+                    <div className="group/item relative rounded-xl overflow-hidden aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800">
                       <img 
                         src="https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=600&q=80" 
-                        alt="Staedtler Engineering Drafting Kit"
+                        alt="Omega Mini Drafter & Drawing Sheet Tube"
                         className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-2.5 flex flex-col justify-end text-white">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Stationery</span>
-                        <p className="text-xs font-bold leading-tight line-clamp-1">Drafting & Compass Set</p>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Omega Drafting</span>
+                        <p className="text-xs font-bold leading-tight line-clamp-1">Mini Drafter & Tube</p>
                         <span className="text-[11px] font-extrabold text-indigo-300 mt-0.5">Open for Swap 🔄</span>
                       </div>
                     </div>
@@ -251,7 +251,7 @@ export default function LandingPage() {
                       <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-[var(--color-text)] font-semibold">Average Savings Per Student:</span>
                     </div>
-                    <span className="font-extrabold text-[#176B4D] dark:text-[#72D6A2]">$120 / semester</span>
+                    <span className="font-extrabold text-[#176B4D] dark:text-[#72D6A2]">₹4,200 / semester</span>
                   </div>
                 </div>
 

@@ -317,11 +317,11 @@ const CircularSwapPage = () => {
                         <div className="h-6 w-px bg-sand-200" />
                         <div className="text-center">
                           <div className="text-xs text-forest-600 font-medium flex items-center gap-1">
-                            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="font-bold text-emerald-600 text-xs">₹</span>
                             Loop Savings
                           </div>
                           <div className="font-bold text-forest-950 text-base">
-                            ${cycle.totalDollarsSaved}
+                            ₹{cycle.totalDollarsSaved}
                           </div>
                         </div>
                       </div>

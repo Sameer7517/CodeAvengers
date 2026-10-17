@@ -289,7 +289,7 @@ export default function DashboardPage() {
               Total Student Savings
             </span>
             <span className="text-2xl sm:text-3xl font-black text-amber-300">
-              ${user.dollarsSaved}
+              ₹{user.rupeesSaved ?? user.dollarsSaved}
             </span>
           </div>
 
@@ -728,7 +728,7 @@ export default function DashboardPage() {
                                 ? '100% Free'
                                 : req.listing?.listingType === 'swap'
                                 ? 'Open for Swap'
-                                : `$${req.listing?.sellingPrice ?? req.listing?.price ?? 0}`}
+                                : `₹${req.listing?.sellingPrice ?? req.listing?.price ?? 0}`}
                             </span>
                             <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-200/60 text-slate-700 font-medium">
                               Status: {req.listing?.status || 'available'}
@@ -1105,7 +1105,7 @@ export default function DashboardPage() {
               <p className="text-[10px] text-slate-400 uppercase font-bold mt-0.5">CO₂ Averted</p>
             </div>
             <div>
-              <span className="text-xl font-black text-amber-600">${user.dollarsSaved}</span>
+              <span className="text-xl font-black text-amber-600">₹{user.rupeesSaved ?? user.dollarsSaved}</span>
               <p className="text-[10px] text-slate-400 uppercase font-bold mt-0.5">Campus Wealth Kept</p>
             </div>
             <div>

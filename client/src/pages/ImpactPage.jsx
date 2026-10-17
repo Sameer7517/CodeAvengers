@@ -209,7 +209,7 @@ const ImpactPage = () => {
                       </span>
                     </div>
                     <div className="text-3xl font-bold font-serif text-forest-950 mt-1">
-                      ${completed.actualDollarsSaved}
+                      ₹{completed.actualDollarsSaved?.toLocaleString('en-IN') || 0}
                     </div>
                     <p className="text-xs text-forest-600 mt-2">
                       Supported strictly by recorded retail replacement price data

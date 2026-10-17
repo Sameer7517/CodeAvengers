@@ -232,12 +232,12 @@ export default function ItemDetailModal() {
                     </div>
                   ) : (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-extrabold text-[var(--color-text)]">${item.sellingPrice ?? item.price}</span>
+                      <span className="text-3xl font-extrabold text-[var(--color-text)]">₹{item.sellingPrice ?? item.price}</span>
                       {(item.originalPrice || 0) > (item.sellingPrice ?? item.price) && (
                         <>
-                          <span className="text-sm text-[var(--color-text-muted)] line-through">${item.originalPrice}</span>
+                          <span className="text-sm text-[var(--color-text-muted)] line-through">₹{item.originalPrice}</span>
                           <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded">
-                            Save ${item.originalPrice - (item.sellingPrice ?? item.price)}
+                            Save ₹{item.originalPrice - (item.sellingPrice ?? item.price)}
                           </span>
                         </>
                       )}
