@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ItemDetailModal from './components/ItemDetailModal';
@@ -27,9 +28,10 @@ function ScrollToTop() {
 export default function App() {
   return (
     <Router>
-      <AppProvider>
-        <ScrollToTop />
-        <div className="flex flex-col min-h-screen bg-offwhite-100 text-slate-800 font-sans selection:bg-forest-100 selection:text-forest-900">
+      <ThemeProvider>
+        <AppProvider>
+          <ScrollToTop />
+          <div className="flex flex-col min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] font-sans transition-colors duration-200">
           <Navbar />
           
           <main className="flex-1">
@@ -53,7 +55,8 @@ export default function App() {
           {/* Global Item Detail Quick-View Modal */}
           <ItemDetailModal />
         </div>
-      </AppProvider>
+        </AppProvider>
+      </ThemeProvider>
     </Router>
   );
 }

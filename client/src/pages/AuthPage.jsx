@@ -101,32 +101,32 @@ export default function AuthPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       {/* Brand Header */}
       <div className="text-center mb-8 space-y-2">
-        <div className="w-12 h-12 rounded-2xl bg-forest-800 text-white flex items-center justify-center mx-auto shadow-md">
-          <Leaf className="w-6 h-6 text-sage-300" />
+        <div className="w-12 h-12 rounded-2xl bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] flex items-center justify-center mx-auto shadow-md">
+          <Leaf className="w-6 h-6" />
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-          {mode === 'login' ? 'Welcome Back to CampusLoop' : 'Join the Circular Campus'}
+        <h1 className="text-2xl font-black text-[var(--color-text)] tracking-tight">
+          {mode === 'login' ? 'Welcome Back to Campus Exchange' : 'Join the Campus Exchange'}
         </h1>
-        <p className="text-xs text-slate-500">
-          The verified sustainable reuse network for university students
+        <p className="text-xs text-[var(--color-text-muted)] font-medium">
+          Reuse. Save. Grow. — The sustainable student reuse network
         </p>
       </div>
 
       {/* Main Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sage-200/80 shadow-xs space-y-6">
+      <div className="glass-card rounded-3xl p-6 sm:p-8 border border-[var(--color-border)] shadow-xs space-y-6">
         {/* Quick Demo Access Callouts for Judges */}
-        <div className="bg-forest-50 border border-forest-200 p-4 rounded-2xl space-y-2.5">
-          <div className="flex items-center justify-between text-xs font-bold text-forest-900">
+        <div className="glass-panel border border-[var(--color-border)] p-4 rounded-2xl space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-bold text-[var(--color-text)]">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-              Hackathon Quick Test Accounts
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              Demo Test Accounts
             </span>
-            <span className="text-[10px] bg-forest-200/80 px-2 py-0.5 rounded font-bold text-forest-900">
-              JWT + MongoDB
+            <span className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded font-bold">
+              JWT + Express
             </span>
           </div>
-          <p className="text-[11px] text-forest-700 leading-relaxed">
-            Test backend authentication with pre-seeded accounts:
+          <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+            Test authentication with pre-seeded student accounts:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <button

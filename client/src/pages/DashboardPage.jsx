@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const [requestRole, setRequestRole] = useState('all'); // 'all' | 'incoming' | 'outgoing'
   const [requestStatusFilter, setRequestStatusFilter] = useState('all'); // 'all' | 'pending' | 'accepted' | 'completed' | 'rejected' | 'cancelled'
   const [declineModal, setDeclineModal] = useState({ isOpen: false, requestId: null, reason: '' });
+  const [listingStatusFilter, setListingStatusFilter] = useState('all'); // 'all' | 'available' | 'reserved' | 'completed'
 
   const loadRequests = async () => {
     if (!user) return;
@@ -442,51 +443,88 @@ export default function DashboardPage() {
 
       {/* Tab 1: My Listings */}
       {activeTab === 'listings' && (
-        <div className="space-y-4">
-          {myListings.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {myListings.map((item) => (
-                <div key={item.id} className="flex flex-col">
-                  <ItemCard item={item} />
-                  {/* Owner Listing Management Controls */}
-                  <div className="mt-2 bg-white rounded-xl border border-slate-200 p-2.5 flex items-center justify-between gap-2 shadow-2xs">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Status:</span>
-                      <select
-                        value={item.status || 'available'}
-                        disabled={actionLoadingId === item.id}
-                        onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                        className="text-xs font-semibold py-1 px-2 rounded-lg border border-slate-200 bg-offwhite-100 focus:outline-hidden focus:border-forest-600 cursor-pointer"
-                      >
-                        <option value="available">🟢 Available</option>
-                        <option value="reserved">🟡 Reserved</option>
-                        <option value="completed">⚪ Completed</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteListing(item.id, item.title)}
-                      disabled={actionLoadingId === item.id}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      title="Delete Listing"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+        <div className="space-y-6">
+          {/* Sub-tabs for Available, Reserved, Completed & Add Listing Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2 p-1 rounded-xl glass-panel">
+              {[
+                { id: 'all', label: 'All Listings', count: myListings.length },
+                { id: 'available', label: 'Available', count: myListings.filter(i => (i.status || 'available') === 'available').length },
+                { id: 'reserved', label: 'Reserved', count: myListings.filter(i => i.status === 'reserved').length },
+                { id: 'completed', label: 'Completed', count: myListings.filter(i => i.status === 'completed').length },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setListingStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    listingStatusFilter === tab.id
+                      ? 'bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] shadow-xs'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  {tab.label} ({tab.count})
+                </button>
               ))}
             </div>
+
+            <Link
+              to="/create"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all self-start sm:self-auto"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add New Listing</span>
+            </Link>
+          </div>
+
+          {myListings.filter(item => listingStatusFilter === 'all' || (item.status || 'available') === listingStatusFilter).length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {myListings
+                .filter(item => listingStatusFilter === 'all' || (item.status || 'available') === listingStatusFilter)
+                .map((item) => (
+                  <div key={item.id} className="flex flex-col">
+                    <ItemCard item={item} />
+                    {/* Owner Listing Management Controls */}
+                    <div className="mt-2 glass-panel rounded-xl border border-[var(--color-border)] p-2.5 flex items-center justify-between gap-2 shadow-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">Status:</span>
+                        <select
+                          value={item.status || 'available'}
+                          disabled={actionLoadingId === item.id}
+                          onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                          className="text-xs font-semibold py-1 px-2 rounded-lg border border-[var(--color-border)] glass-panel text-[var(--color-text)] focus:outline-hidden cursor-pointer"
+                        >
+                          <option value="available">🟢 Available</option>
+                          <option value="reserved">🟡 Reserved</option>
+                          <option value="completed">⚪ Completed</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteListing(item.id, item.title)}
+                        disabled={actionLoadingId === item.id}
+                        className="p-1.5 text-[var(--color-text-muted)] hover:text-rose-600 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Delete Listing"
+                        aria-label="Delete listing"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
           ) : (
-            <div className="bg-white rounded-3xl p-10 text-center border border-sage-200/80 space-y-3">
-              <Package className="w-10 h-10 text-slate-400 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">You haven't posted any listings yet</h3>
-              <p className="text-xs text-slate-500">
-                Help fellow students and divert carbon by sharing your textbooks or lab gear.
+            <div className="glass-card rounded-3xl p-10 text-center border border-[var(--color-border)] space-y-3">
+              <Package className="w-10 h-10 text-[var(--color-text-muted)] mx-auto opacity-50" />
+              <h3 className="text-base font-bold text-[var(--color-text)]">
+                {listingStatusFilter === 'all' ? "You haven't posted any listings yet" : `No ${listingStatusFilter} listings found`}
+              </h3>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Help fellow students and divert carbon by sharing your textbooks, calculators, or lab gear.
               </p>
               <Link
                 to="/create"
-                className="inline-block px-5 py-2.5 rounded-xl bg-forest-800 text-white font-bold text-xs hover:bg-forest-900"
+                className="inline-block px-5 py-2.5 rounded-xl bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] font-bold text-xs"
               >
                 + List an Item Now
               </Link>

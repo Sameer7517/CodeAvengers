@@ -111,7 +111,7 @@ const CircularSwapPage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-sand-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] py-10 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Hero Header */}

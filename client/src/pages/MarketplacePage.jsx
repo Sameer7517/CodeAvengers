@@ -1,11 +1,10 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Search, 
   SlidersHorizontal, 
   X, 
   ArrowUpDown, 
-  Leaf, 
   Sparkles, 
   Gift, 
   RefreshCw, 
@@ -17,8 +16,10 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-  DollarSign,
-  Loader2
+  Calculator,
+  CheckCircle,
+  Clock,
+  Filter
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import ItemCard from '../components/ItemCard';
@@ -37,10 +38,12 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
   const [selectedType, setSelectedType] = useState(typeParam);
   const [selectedCondition, setSelectedCondition] = useState('all');
+  const [selectedAvailability, setSelectedAvailability] = useState('all'); // 'all' | 'available' | 'reserved' | 'completed'
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'price-asc' | 'price-desc'
   const [page, setPage] = useState(pageParam);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState({
@@ -57,26 +60,40 @@ export default function MarketplacePage() {
   useEffect(() => {
     setSelectedCategory(searchParams.get('category') || 'all');
     setSelectedType(searchParams.get('type') || 'all');
-    if (searchParams.get('q')) {
-      setSearchQuery(searchParams.get('q'));
+    if (searchParams.get('q') !== null) {
+      setSearchQuery(searchParams.get('q') || '');
     }
   }, [searchParams]);
 
   const categories = [
     { id: 'all', name: 'All Categories', icon: Sparkles },
-    { id: 'textbooks', name: 'Textbooks', icon: BookOpen },
-    { id: 'electronics', name: 'Calculators & Tech', icon: Cpu },
-    { id: 'lab-gear', name: 'Lab Gear', icon: FlaskConical },
-    { id: 'stationery', name: 'Stationery', icon: PenTool },
-    { id: 'dorm', name: 'Dorm Essentials', icon: Home },
+    { id: 'textbooks', name: 'Books & Textbooks', icon: BookOpen },
+    { id: 'electronics', name: 'Calculators & Tech', icon: Calculator },
+    { id: 'lab-gear', name: 'Lab Supplies & PPE', icon: FlaskConical },
+    { id: 'stationery', name: 'Stationery & Drafting', icon: PenTool },
+    { id: 'dorm', name: 'Other Essentials', icon: Home },
     { id: 'giveaways', name: 'Free Giveaways', icon: Gift },
   ];
 
   const listingTypes = [
-    { id: 'all', label: 'All Listings' },
+    { id: 'all', label: 'All Exchange Types' },
     { id: 'sell', label: 'For Sale' },
     { id: 'free', label: 'Free Giveaways 🎁' },
     { id: 'trade', label: 'Trades / Swaps 🔄' },
+  ];
+
+  const conditions = [
+    { id: 'all', label: 'Any Condition' },
+    { id: 'Like New', label: 'Like New' },
+    { id: 'Good', label: 'Good' },
+    { id: 'Fair', label: 'Fair' },
+  ];
+
+  const availabilities = [
+    { id: 'all', label: 'All Items' },
+    { id: 'available', label: 'Available Only', icon: CheckCircle },
+    { id: 'reserved', label: 'Reserved', icon: Clock },
+    { id: 'completed', label: 'Completed', icon: CheckCircle },
   ];
 
   // Fetch listings from backend API
@@ -102,7 +119,12 @@ export default function MarketplacePage() {
     try {
       const res = await fetchListingsApi(queryArgs);
       if (res && res.success) {
-        setItems(res.data);
+        let resultData = res.data;
+        // Filter by availability on client if specified
+        if (selectedAvailability !== 'all') {
+          resultData = resultData.filter(i => (i.status || 'available') === selectedAvailability);
+        }
+        setItems(resultData);
         if (res.pagination) {
           setPagination(res.pagination);
         }
@@ -136,73 +158,79 @@ export default function MarketplacePage() {
         return false;
       }
 
+      if (selectedAvailability !== 'all' && (item.status || 'available') !== selectedAvailability) {
+        return false;
+      }
+
       const p = item.sellingPrice ?? item.price ?? 0;
       if (minPrice && p < Number(minPrice)) return false;
       if (maxPrice && p > Number(maxPrice)) return false;
 
       return true;
-    }).sort((a, b) => {
-      if (sortBy === 'price-asc') return (a.sellingPrice ?? a.price) - (b.sellingPrice ?? b.price);
-      if (sortBy === 'price-desc') return (b.sellingPrice ?? b.price) - (a.sellingPrice ?? a.price);
-      if (sortBy === 'co2-desc') return (b.co2SavedKg || 0) - (a.co2SavedKg || 0);
-      return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-    const total = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(total / 8));
-    const startIdx = (page - 1) * 8;
-    setItems(filtered.slice(startIdx, startIdx + 8));
+    // Client-side sorting
+    filtered.sort((a, b) => {
+      if (sortBy === 'price-asc') {
+        return (a.sellingPrice ?? a.price ?? 0) - (b.sellingPrice ?? b.price ?? 0);
+      }
+      if (sortBy === 'price-desc') {
+        return (b.sellingPrice ?? b.price ?? 0) - (a.sellingPrice ?? a.price ?? 0);
+      }
+      if (sortBy === 'oldest') {
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      }
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    setItems(filtered);
     setPagination({
-      total,
-      page,
+      page: 1,
       limit: 8,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1
+      total: filtered.length,
+      totalPages: Math.max(1, Math.ceil(filtered.length / 8)),
+      hasNextPage: false,
+      hasPrevPage: false
     });
     setIsLoading(false);
-  }, [searchQuery, selectedCategory, selectedType, selectedCondition, minPrice, maxPrice, sortBy, page, fallbackListings, fetchListingsApi]);
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedType,
+    selectedCondition,
+    selectedAvailability,
+    minPrice,
+    maxPrice,
+    sortBy,
+    page,
+    fallbackListings,
+    fetchListingsApi
+  ]);
 
   useEffect(() => {
     loadListings();
   }, [loadListings]);
 
-  const handleCategorySelect = (catId) => {
-    setSelectedCategory(catId);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
     setPage(1);
-    const newParams = new URLSearchParams(searchParams);
-    if (catId === 'all') {
-      newParams.delete('category');
-    } else {
-      newParams.set('category', catId);
-    }
-    newParams.set('page', '1');
-    setSearchParams(newParams);
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (searchQuery.trim()) {
+        p.set('q', searchQuery.trim());
+      } else {
+        p.delete('q');
+      }
+      return p;
+    });
   };
 
-  const handleTypeSelect = (typeId) => {
-    setSelectedType(typeId);
-    setPage(1);
-    const newParams = new URLSearchParams(searchParams);
-    if (typeId === 'all') {
-      newParams.delete('type');
-    } else {
-      newParams.set('type', typeId);
-    }
-    newParams.set('page', '1');
-    setSearchParams(newParams);
-  };
-
-  const handleSearchChange = (val) => {
-    setSearchQuery(val);
-    setPage(1);
-  };
-
-  const handleResetFilters = () => {
+  const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
     setSelectedType('all');
     setSelectedCondition('all');
+    setSelectedAvailability('all');
     setMinPrice('');
     setMaxPrice('');
     setSortBy('newest');
@@ -210,281 +238,397 @@ export default function MarketplacePage() {
     setSearchParams({});
   };
 
-  const activeFiltersCount = 
-    (selectedCategory !== 'all' ? 1 : 0) +
-    (selectedType !== 'all' ? 1 : 0) +
-    (selectedCondition !== 'all' ? 1 : 0) +
-    (minPrice !== '' ? 1 : 0) +
-    (maxPrice !== '' ? 1 : 0) +
-    (searchQuery.trim() !== '' ? 1 : 0);
+  // Check active filter count
+  const activeFiltersCount = [
+    selectedCategory !== 'all',
+    selectedType !== 'all',
+    selectedCondition !== 'all',
+    selectedAvailability !== 'all',
+    minPrice !== '',
+    maxPrice !== '',
+    searchQuery.trim() !== ''
+  ].filter(Boolean).length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Page Title & Search Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sage-200/70 shadow-xs space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-forest-700 text-xs font-bold uppercase tracking-wider mb-1">
-              <Leaf className="w-4 h-4 text-emerald-600" />
-              <span>Campus Circular Marketplace</span>
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-              Exchange & Reuse Directory
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Find verified course materials, textbooks, and gear right on campus.
-            </p>
-          </div>
-
-          {/* Quick Eco Stats Highlight */}
-          <div className="hidden lg:flex items-center gap-3 bg-forest-50 border border-forest-200/80 px-4 py-2.5 rounded-2xl">
-            <div className="w-9 h-9 rounded-xl bg-forest-800 text-white flex items-center justify-center">
-              <Leaf className="w-5 h-5 text-sage-300" />
-            </div>
-            <div className="text-xs">
-              <span className="font-bold text-forest-900 block">Carbon Offset Mode</span>
-              <span className="text-forest-700">Sort by highest CO₂ saved to maximize impact</span>
-            </div>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      
+      {/* Top Header & Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] tracking-tight">
+            Browse Marketplace
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-0.5">
+            Showing <strong className="text-[var(--color-text)]">{items.length}</strong> items from verified students
+          </p>
         </div>
 
-        {/* Search Bar & Sorting Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search by title, description, course codes (e.g. Campbell Biology, TI-84, CHEM 111)..."
-              className="w-full pl-12 pr-10 py-3.5 bg-offwhite-100 border border-slate-200 rounded-2xl text-sm focus:outline-hidden focus:border-forest-600 focus:bg-white transition-all font-medium"
-            />
-            {searchQuery && (
+        {/* Search Field */}
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3.5 top-3 text-[var(--color-text-muted)]" />
+          <input
+            type="text"
+            placeholder="Search titles, textbooks, calculators, tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-24 py-2.5 rounded-2xl glass-panel text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-hidden focus:ring-2 focus:ring-[#176B4D]/30 dark:focus:ring-[#72D6A2]/30"
+          />
+          <button
+            type="submit"
+            className="absolute right-2 top-1.5 px-3 py-1 bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] text-xs font-bold rounded-xl"
+          >
+            Search
+          </button>
+        </form>
+      </div>
+
+      {/* Mobile Filter & Sort Triggers */}
+      <div className="flex items-center justify-between gap-2 md:hidden">
+        <button
+          onClick={() => setMobileDrawerOpen(true)}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl glass-panel border border-[var(--color-border)] text-xs font-bold text-[var(--color-text)]"
+        >
+          <Filter className="w-4 h-4 text-[#176B4D] dark:text-[#72D6A2]" />
+          <span>Filters</span>
+          {activeFiltersCount > 0 && (
+            <span className="w-5 h-5 rounded-full bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] text-[10px] font-black flex items-center justify-center">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          aria-label="Sort listings"
+          className="flex-1 py-2.5 px-3 rounded-xl glass-panel border border-[var(--color-border)] text-xs font-bold text-[var(--color-text)] focus:outline-hidden"
+        >
+          <option value="newest">Sort: Newest</option>
+          <option value="oldest">Sort: Oldest</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+        </select>
+      </div>
+
+      {/* Active Filter Chips */}
+      {activeFiltersCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-xs font-semibold text-[var(--color-text-muted)]">Active Filters:</span>
+          {searchQuery && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2]">
+              Search: "{searchQuery}"
+              <button onClick={() => { setSearchQuery(''); setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete('q'); return p; }); }}><X className="w-3 h-3" /></button>
+            </span>
+          )}
+          {selectedCategory !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2]">
+              Category: {selectedCategory}
+              <button onClick={() => setSelectedCategory('all')}><X className="w-3 h-3" /></button>
+            </span>
+          )}
+          {selectedType !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2]">
+              Type: {selectedType}
+              <button onClick={() => setSelectedType('all')}><X className="w-3 h-3" /></button>
+            </span>
+          )}
+          {selectedCondition !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2]">
+              Condition: {selectedCondition}
+              <button onClick={() => setSelectedCondition('all')}><X className="w-3 h-3" /></button>
+            </span>
+          )}
+          {selectedAvailability !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2]">
+              Availability: {selectedAvailability}
+              <button onClick={() => setSelectedAvailability('all')}><X className="w-3 h-3" /></button>
+            </span>
+          )}
+          <button
+            onClick={clearAllFilters}
+            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 ml-2"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Clear all
+          </button>
+        </div>
+      )}
+
+      {/* Main Grid with Desktop Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        
+        {/* Desktop Sidebar Filter Panel */}
+        <div className="hidden lg:block space-y-6 glass-panel p-5 rounded-2xl border border-[var(--color-border)] sticky top-24">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border)]">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-text)] flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4 text-[#176B4D] dark:text-[#72D6A2]" />
+              Filter Catalog
+            </span>
+            {activeFiltersCount > 0 && (
               <button
-                onClick={() => handleSearchChange('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                title="Clear search"
+                onClick={clearAllFilters}
+                className="text-[11px] font-bold text-rose-600 hover:underline"
               >
-                <X className="w-4 h-4" />
+                Reset
               </button>
             )}
           </div>
 
-          {/* Sorting Dropdown */}
-          <div className="flex items-center gap-2 sm:w-64">
-            <div className="relative w-full">
-              <ArrowUpDown className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <select
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full pl-10 pr-8 py-3.5 bg-offwhite-100 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:outline-hidden focus:border-forest-600 appearance-none cursor-pointer"
-              >
-                <option value="newest">Sort: Newest First</option>
-                <option value="co2-desc">Sort: Highest CO₂ Saved 🌱</option>
-                <option value="price-asc">Sort: Price: Low to High</option>
-                <option value="price-desc">Sort: Price: High to Low</option>
-              </select>
+          {/* Categories */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--color-text)] block">Categories</label>
+            <div className="space-y-1">
+              {categories.map((c) => {
+                const Icon = c.icon;
+                const isSelected = selectedCategory === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedCategory(c.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left ${
+                      isSelected
+                        ? 'bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E] font-bold shadow-xs'
+                        : 'text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{c.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Category Pills Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => handleCategorySelect(cat.id)}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  isSelected
-                    ? 'bg-forest-800 text-white shadow-sm'
-                    : 'bg-offwhite-100 text-slate-700 hover:bg-forest-50 hover:text-forest-900 border border-slate-200/60'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-sage-300' : 'text-slate-500'}`} />
-                <span>{cat.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Sub-Filters Toolbar (Listing Type, Condition, Price Range Filter) */}
-      <div className="bg-white rounded-2xl p-4 border border-sage-200/70 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        {/* Listing Type Tabs */}
-        <div className="inline-flex p-1 bg-offwhite-100 border border-slate-200 rounded-xl shadow-2xs">
-          {listingTypes.map((type) => {
-            const isSelected = selectedType === type.id;
-            return (
-              <button
-                key={type.id}
-                onClick={() => handleTypeSelect(type.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  isSelected
-                    ? 'bg-forest-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {type.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Price Range Filter for Sell Listings */}
-        {(selectedType === 'all' || selectedType === 'sell') && (
-          <div className="flex items-center gap-2 text-xs bg-offwhite-100 px-3 py-1.5 rounded-xl border border-slate-200">
-            <span className="text-slate-500 font-semibold flex items-center gap-1">
-              <DollarSign className="w-3.5 h-3.5 text-forest-700" />
-              Price Range:
-            </span>
-            <input
-              type="number"
-              min="0"
-              placeholder="Min $"
-              value={minPrice}
-              onChange={(e) => {
-                setMinPrice(e.target.value);
-                setPage(1);
-              }}
-              className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-hidden focus:border-forest-600"
-            />
-            <span className="text-slate-400">-</span>
-            <input
-              type="number"
-              min="0"
-              placeholder="Max $"
-              value={maxPrice}
-              onChange={(e) => {
-                setMaxPrice(e.target.value);
-                setPage(1);
-              }}
-              className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-hidden focus:border-forest-600"
-            />
+          {/* Listing Type / Exchange Mode */}
+          <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+            <label className="text-xs font-bold text-[var(--color-text)] block">Exchange Type</label>
+            <div className="space-y-1">
+              {listingTypes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedType(t.id)}
+                  className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                    selectedType === t.id
+                      ? 'bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2] font-bold border border-emerald-500/30'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
 
-        {/* Condition Filter & Reset */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-slate-500 font-medium">Condition:</span>
+          {/* Availability Filter */}
+          <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+            <label className="text-xs font-bold text-[var(--color-text)] block">Availability</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {availabilities.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => setSelectedAvailability(a.id)}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold text-center transition-all ${
+                    selectedAvailability === a.id
+                      ? 'bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E]'
+                      : 'bg-black/5 dark:bg-white/5 text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Condition Filter */}
+          <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+            <label className="text-xs font-bold text-[var(--color-text)] block">Item Condition</label>
+            <div className="space-y-1">
+              {conditions.map((cond) => (
+                <button
+                  key={cond.id}
+                  onClick={() => setSelectedCondition(cond.id)}
+                  className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                    selectedCondition === cond.id
+                      ? 'bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2] font-bold border border-emerald-500/30'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  {cond.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sorting */}
+          <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+            <label className="text-xs font-bold text-[var(--color-text)] block">Sort By</label>
             <select
-              value={selectedCondition}
-              onChange={(e) => {
-                setSelectedCondition(e.target.value);
-                setPage(1);
-              }}
-              className="bg-white border border-slate-200 text-xs font-semibold rounded-xl px-2.5 py-1.5 focus:outline-hidden focus:border-forest-600 cursor-pointer"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Desktop sort listings"
+              className="w-full px-3 py-2 rounded-xl glass-panel text-xs font-semibold text-[var(--color-text)] border border-[var(--color-border)] focus:outline-hidden"
             >
-              <option value="all">All Conditions</option>
-              <option value="Like New">Like New</option>
-              <option value="Good">Good</option>
-              <option value="Fair">Fair</option>
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
             </select>
           </div>
+        </div>
 
-          {activeFiltersCount > 0 && (
-            <button
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-forest-700 bg-forest-50 hover:bg-forest-100 rounded-xl transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Reset ({activeFiltersCount})
-            </button>
+        {/* Product Grid (Responsive: 1-2 on mobile, 2-3 on tablet, 3-4 on desktop) */}
+        <div className="lg:col-span-3 space-y-6">
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="glass-card rounded-2xl h-80 animate-pulse bg-black/5 dark:bg-white/5" />
+              ))}
+            </div>
+          ) : items.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {items.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="glass-card p-12 text-center rounded-3xl space-y-4 max-w-md mx-auto my-8">
+              <Sparkles className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto" />
+              <h3 className="text-lg font-bold text-[var(--color-text)]">No matching items found</h3>
+              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                Try clearing your search filters or adjusting the category selection.
+              </p>
+              <button
+                onClick={clearAllFilters}
+                className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-[#176B4D] dark:bg-[#72D6A2] dark:text-[#0B110E]"
+              >
+                Reset All Filters
+              </button>
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* Result Count Banner */}
-      <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-        <span>
-          Showing <strong>{items.length}</strong> of <strong>{pagination.total}</strong> sustainable items (Page {pagination.page} of {pagination.totalPages})
-        </span>
-        <span className="text-emerald-700 font-medium hidden sm:inline">
-          🌱 Certified Safe-Exchange Campus Network
-        </span>
-      </div>
-
-      {/* Items Grid, Loading State, or Empty State */}
-      {isLoading ? (
-        <div className="py-20 text-center space-y-3 bg-white rounded-3xl border border-sage-200/80">
-          <Loader2 className="w-8 h-8 animate-spin text-forest-700 mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Discovering verified campus listings...</p>
-        </div>
-      ) : items.length > 0 ? (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {items.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </div>
 
           {/* Pagination Controls */}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-6 pb-2">
+            <div className="flex items-center justify-center gap-3 pt-6 border-t border-[var(--color-border)]">
               <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={!pagination.hasPrevPage}
-                className="inline-flex items-center gap-1 px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-colors"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="p-2 rounded-xl glass-panel text-[var(--color-text)] disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Previous page"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
               </button>
-
-              <div className="flex items-center gap-1">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
-                  <button
-                    key={pageNum}
-                    type="button"
-                    onClick={() => setPage(pageNum)}
-                    className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
-                      page === pageNum
-                        ? 'bg-forest-800 text-white shadow-xs'
-                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                ))}
-              </div>
-
+              <span className="text-xs font-bold text-[var(--color-text)]">
+                Page {page} of {pagination.totalPages}
+              </span>
               <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                disabled={!pagination.hasNextPage}
-                className="inline-flex items-center gap-1 px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-colors"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className="p-2 rounded-xl glass-panel text-[var(--color-text)] disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Next page"
               >
-                Next
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
         </div>
-      ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-sage-200/80 shadow-xs max-w-lg mx-auto space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-forest-50 border border-forest-100 flex items-center justify-center text-forest-700 mx-auto">
-            <Leaf className="w-8 h-8 text-sage-600" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-900">No matching campus items found</h3>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Try adjusting your search terms, removing price filters, or clearing category selections.
-          </p>
-          <div className="pt-2">
-            <button
-              onClick={handleResetFilters}
-              className="px-5 py-2.5 rounded-xl bg-forest-800 text-white font-bold text-xs hover:bg-forest-900 transition-colors"
-            >
-              Clear All Filters
-            </button>
+      </div>
+
+      {/* Mobile Slide-over Filter Drawer */}
+      {mobileDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+
+          {/* Drawer Sheet */}
+          <div className="relative ml-auto w-full max-w-xs h-full glass-dropdown p-6 overflow-y-auto space-y-6 shadow-2xl animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border)]">
+              <h3 className="font-extrabold text-base text-[var(--color-text)]">Filter Marketplace</h3>
+              <button onClick={() => setMobileDrawerOpen(false)} className="p-1 rounded-lg text-[var(--color-text)]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mobile Categories */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--color-text)] block">Category</label>
+              <div className="space-y-1">
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedCategory(c.id); setMobileDrawerOpen(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold ${
+                      selectedCategory === c.id
+                        ? 'bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E]'
+                        : 'text-[var(--color-text-muted)] hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Exchange Type */}
+            <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+              <label className="text-xs font-bold text-[var(--color-text)] block">Exchange Type</label>
+              <div className="space-y-1">
+                {listingTypes.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => { setSelectedType(t.id); setMobileDrawerOpen(false); }}
+                    className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-semibold ${
+                      selectedType === t.id
+                        ? 'bg-emerald-500/10 text-[#176B4D] dark:text-[#72D6A2] font-bold'
+                        : 'text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Availability */}
+            <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+              <label className="text-xs font-bold text-[var(--color-text)] block">Availability</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {availabilities.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => { setSelectedAvailability(a.id); setMobileDrawerOpen(false); }}
+                    className={`px-2 py-1.5 rounded-xl text-xs font-semibold ${
+                      selectedAvailability === a.id
+                        ? 'bg-[#176B4D] dark:bg-[#72D6A2] text-white dark:text-[#0B110E]'
+                        : 'bg-black/5 dark:bg-white/5 text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[var(--color-border)] flex gap-2">
+              <button
+                onClick={() => { clearAllFilters(); setMobileDrawerOpen(false); }}
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-500/10"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setMobileDrawerOpen(false)}
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-[#176B4D] dark:bg-[#72D6A2] dark:text-[#0B110E]"
+              >
+                Apply Filters
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
