@@ -7,6 +7,7 @@ import { listingStore } from './listingStore.js';
 import { notificationStore } from './notificationStore.js';
 import { inMemoryUserStore } from './inMemoryUserStore.js';
 import { exchangeStore } from './exchangeStore.js';
+import { findCircularCycles, checkAffinity } from './cycleDetectionAlgorithm.js';
 
 class CircularSwapStore {
   constructor() {
@@ -158,6 +159,31 @@ class CircularSwapStore {
   }
 
   /**
+   * Checks if any item is already committed to an active circular swap proposal (pending_consent or confirmed).
+   */
+  async getActiveProposalForItemIds(itemIds) {
+    const stringItemIds = itemIds.map(id => id.toString());
+    if (isDatabaseConnected()) {
+      try {
+        const found = await CircularProposal.findOne({
+          items: { $in: stringItemIds },
+          status: { $in: ['pending_consent', 'confirmed'] }
+        }).lean();
+        if (found) return found;
+      } catch (err) {
+        console.warn('DB active proposal check fallback:', err.message);
+      }
+    }
+
+    return (
+      this.memoryProposals.find(p =>
+        ['pending_consent', 'confirmed'].includes(p.status) &&
+        p.items?.some(it => stringItemIds.includes((it._id || it.id || it).toString()))
+      ) || null
+    );
+  }
+
+  /**
    * Identifies 2-way and 3-way circular swap cycles among available items.
    * Returns cycles as transparent suggestions only.
    */
@@ -171,212 +197,8 @@ class CircularSwapStore {
       };
     }
 
-    // Build directed adjacency graph
-    // adj[itemA.id] = [ { targetItem: itemB, reason, score } ]
-    // Meaning: Owner of itemA would be satisfied receiving itemB
-    const adj = new Map();
-    items.forEach(i => adj.set(i.id, []));
-
-    for (let i = 0; i < items.length; i++) {
-      for (let j = 0; j < items.length; j++) {
-        if (i === j) continue;
-        const giver = items[i];
-        const candidate = items[j];
-
-        const match = this.evaluateAffinity(giver, candidate);
-        if (match.matched) {
-          adj.get(giver.id).push({
-            targetItem: candidate,
-            reason: match.reason,
-            score: match.score
-          });
-        }
-      }
-    }
-
-    const discoveredCycles = [];
-    const seenCycles = new Set();
-
-    // 1. Detect 2-way cycles (A ↔ B)
-    // Student A gives Item A to B (B wants A), Student B gives Item B to A (A wants B)
-    for (const itemA of items) {
-      const edgesA = adj.get(itemA.id) || [];
-      for (const edgeA of edgesA) {
-        const itemB = edgeA.targetItem;
-        if (itemA.seller.id === itemB.seller.id) continue;
-
-        // Check if itemB also has an edge to itemA
-        const edgesB = adj.get(itemB.id) || [];
-        const reverseEdge = edgesB.find(e => e.targetItem.id === itemA.id);
-
-        if (reverseEdge) {
-          const cycleKey = ['2-way', itemA.id, itemB.id].sort().join(':');
-          if (!seenCycles.has(cycleKey)) {
-            seenCycles.add(cycleKey);
-
-            const totalCo2 = Math.round((itemA.co2SavedKg + itemB.co2SavedKg) * 10) / 10;
-            const totalSavings = Math.round((itemA.originalPrice || 35) + (itemB.originalPrice || 35));
-
-            discoveredCycles.push({
-              id: `cycle-2way-${itemA.id}-${itemB.id}`,
-              cycleType: '2-way',
-              participantCount: 2,
-              totalCo2SavedKg: totalCo2,
-              totalDollarsSaved: totalSavings,
-              efficiencyScore: Math.round((edgeA.score + reverseEdge.score) / 2),
-              participants: [
-                {
-                  id: itemA.seller.id,
-                  name: itemA.seller.name,
-                  avatar: itemA.seller.avatar,
-                  department: itemA.seller.department,
-                  givingItem: { id: itemA.id, title: itemA.title, imageUrl: itemA.imageUrl, category: itemA.category },
-                  receivingItem: { id: itemB.id, title: itemB.title, imageUrl: itemB.imageUrl, category: itemB.category }
-                },
-                {
-                  id: itemB.seller.id,
-                  name: itemB.seller.name,
-                  avatar: itemB.seller.avatar,
-                  department: itemB.seller.department,
-                  givingItem: { id: itemB.id, title: itemB.title, imageUrl: itemB.imageUrl, category: itemB.category },
-                  receivingItem: { id: itemA.id, title: itemA.title, imageUrl: itemA.imageUrl, category: itemA.category }
-                }
-              ],
-              steps: [
-                {
-                  step: 1,
-                  fromStudent: itemA.seller,
-                  toStudent: itemB.seller,
-                  item: itemA,
-                  reason: reverseEdge.reason
-                },
-                {
-                  step: 2,
-                  fromStudent: itemB.seller,
-                  toStudent: itemA.seller,
-                  item: itemB,
-                  reason: edgeA.reason
-                }
-              ],
-              summary: `Direct 2-way loop: ${itemA.seller.name} (${itemA.title}) ↔ ${itemB.seller.name} (${itemB.title})`
-            });
-          }
-        }
-      }
-    }
-
-    // 2. Detect 3-way circular cycles (A → B → C → A)
-    // A wants C's item, B wants A's item, C wants B's item
-    // Or: A transfers itemA to B; B transfers itemB to C; C transfers itemC to A
-    for (const itemA of items) {
-      const edgesA = adj.get(itemA.id) || [];
-      for (const edgeA of edgesA) {
-        const itemB = edgeA.targetItem;
-        if (itemB.seller.id === itemA.seller.id) continue;
-
-        const edgesB = adj.get(itemB.id) || [];
-        for (const edgeB of edgesB) {
-          const itemC = edgeB.targetItem;
-          // Must all be distinct students
-          if (
-            itemC.seller.id === itemA.seller.id ||
-            itemC.seller.id === itemB.seller.id ||
-            itemC.id === itemA.id
-          ) {
-            continue;
-          }
-
-          const edgesC = adj.get(itemC.id) || [];
-          const closeCycleEdge = edgesC.find(e => e.targetItem.id === itemA.id);
-
-          if (closeCycleEdge) {
-            // Found a 3-way cycle: A -> B -> C -> A
-            // Canonical rotation to prevent duplicate cycles with different starting points
-            const idList = [itemA.id, itemB.id, itemC.id];
-            const minId = [...idList].sort()[0];
-            const minIdx = idList.indexOf(minId);
-            const rotated = [
-              idList[minIdx],
-              idList[(minIdx + 1) % 3],
-              idList[(minIdx + 2) % 3]
-            ];
-            const cycleKey = ['3-way', ...rotated].join(':');
-
-            if (!seenCycles.has(cycleKey)) {
-              seenCycles.add(cycleKey);
-
-              const totalCo2 = Math.round(
-                (itemA.co2SavedKg + itemB.co2SavedKg + itemC.co2SavedKg) * 10
-              ) / 10;
-              const totalSavings = Math.round(
-                (itemA.originalPrice || 35) +
-                (itemB.originalPrice || 35) +
-                (itemC.originalPrice || 35)
-              );
-
-              discoveredCycles.push({
-                id: `cycle-3way-${itemA.id}-${itemB.id}-${itemC.id}`,
-                cycleType: '3-way',
-                participantCount: 3,
-                totalCo2SavedKg: totalCo2,
-                totalDollarsSaved: totalSavings,
-                efficiencyScore: Math.round((edgeA.score + edgeB.score + closeCycleEdge.score) / 3),
-                participants: [
-                  {
-                    id: itemA.seller.id,
-                    name: itemA.seller.name,
-                    avatar: itemA.seller.avatar,
-                    department: itemA.seller.department,
-                    givingItem: { id: itemA.id, title: itemA.title, imageUrl: itemA.imageUrl, category: itemA.category },
-                    receivingItem: { id: itemC.id, title: itemC.title, imageUrl: itemC.imageUrl, category: itemC.category }
-                  },
-                  {
-                    id: itemB.seller.id,
-                    name: itemB.seller.name,
-                    avatar: itemB.seller.avatar,
-                    department: itemB.seller.department,
-                    givingItem: { id: itemB.id, title: itemB.title, imageUrl: itemB.imageUrl, category: itemB.category },
-                    receivingItem: { id: itemA.id, title: itemA.title, imageUrl: itemA.imageUrl, category: itemA.category }
-                  },
-                  {
-                    id: itemC.seller.id,
-                    name: itemC.seller.name,
-                    avatar: itemC.seller.avatar,
-                    department: itemC.seller.department,
-                    givingItem: { id: itemC.id, title: itemC.title, imageUrl: itemC.imageUrl, category: itemC.category },
-                    receivingItem: { id: itemB.id, title: itemB.title, imageUrl: itemB.imageUrl, category: itemB.category }
-                  }
-                ],
-                steps: [
-                  {
-                    step: 1,
-                    fromStudent: itemA.seller,
-                    toStudent: itemB.seller,
-                    item: itemA,
-                    reason: edgeA.reason
-                  },
-                  {
-                    step: 2,
-                    fromStudent: itemB.seller,
-                    toStudent: itemC.seller,
-                    item: itemB,
-                    reason: edgeB.reason
-                  },
-                  {
-                    step: 3,
-                    fromStudent: itemC.seller,
-                    toStudent: itemA.seller,
-                    item: itemC,
-                    reason: closeCycleEdge.reason
-                  }
-                ],
-                summary: `Triangular loop: ${itemA.seller.name} gives to ${itemB.seller.name} gives to ${itemC.seller.name} gives to ${itemA.seller.name}`
-              });
-            }
-          }
-        }
-      }
-    }
+    // Run modular cycle detection algorithm for both 2-way and 3-way circular loops
+    let discoveredCycles = findCircularCycles(items, { minLength: 2, maxLength: 3 });
 
     // Sort by efficiencyScore descending, then totalCo2SavedKg descending
     let sortedCycles = discoveredCycles.sort((a, b) => {
@@ -437,6 +259,12 @@ class CircularSwapStore {
 
     const itemIds = cycleData.steps.map(s => (s.item.id || s.item._id).toString());
 
+    // Safety check: Prevent an item from being committed to multiple active circular swaps simultaneously
+    const conflicting = await this.getActiveProposalForItemIds(itemIds);
+    if (conflicting) {
+      throw new Error('Cannot initiate cycle: One or more items are already committed to an active circular swap proposal');
+    }
+
     // Revalidate items are currently available before creating proposal
     const availableItems = await this.getAvailableCandidateItems();
     const availableIdSet = new Set(availableItems.map(i => i.id));
@@ -477,7 +305,9 @@ class CircularSwapStore {
       itemCategory: s.item.category || '',
       itemImageUrl: s.item.imageUrl || '',
       itemCo2Kg: Number(s.item.co2SavedKg) || 0,
-      matchReason: s.reason || ''
+      matchReason: s.reason || '',
+      handoverConfirmed: false,
+      handoverConfirmedAt: null
     }));
 
     let proposalRecord = null;
@@ -760,6 +590,139 @@ class CircularSwapStore {
     }
 
     return proposal ? { ...proposal, id: (proposal._id || proposal.id).toString() } : null;
+  }
+
+  /**
+   * Confirms item handover for a specific step in a confirmed circular swap.
+   * When all steps have confirmed handovers, the proposal transitions to 'completed'.
+   */
+  async confirmStepHandover({ proposalId, user, stepIndex, itemId }) {
+    const userId = (user._id || user.id || user).toString();
+
+    let proposal = null;
+    if (isDatabaseConnected()) {
+      try {
+        proposal = await CircularProposal.findById(proposalId);
+      } catch (err) {
+        console.warn('DB confirmStepHandover fetch fallback:', err.message);
+      }
+    }
+
+    if (!proposal) {
+      proposal = this.memoryProposals.find(p => (p._id || p.id).toString() === proposalId);
+    }
+
+    if (!proposal) {
+      throw new Error(`Proposal ${proposalId} not found`);
+    }
+
+    if (proposal.status !== 'confirmed' && proposal.status !== 'completed') {
+      throw new Error(`Handovers can only be confirmed for confirmed proposals (current status: ${proposal.status})`);
+    }
+
+    // Determine target step index
+    let targetIdx = -1;
+    if (stepIndex !== undefined && stepIndex !== null && !isNaN(Number(stepIndex))) {
+      targetIdx = Number(stepIndex);
+    } else if (itemId) {
+      targetIdx = proposal.steps.findIndex(s => s.itemId === itemId.toString());
+    } else {
+      targetIdx = proposal.steps.findIndex(s => s.toUserId === userId && !s.handoverConfirmed);
+    }
+
+    if (targetIdx < 0 || targetIdx >= proposal.steps.length) {
+      throw new Error('Invalid step specified for handover confirmation');
+    }
+
+    const step = proposal.steps[targetIdx];
+
+    // Authorization check: User must be recipient, giver, initiator, or verified loop participant
+    const isRecipient = step.toUserId === userId;
+    const isGiver = step.fromUserId === userId;
+    const isInitiator = (proposal.initiator?._id || proposal.initiator || '').toString() === userId;
+    const isParticipant = proposal.participants.some(p => (p._id || p).toString() === userId);
+
+    if (!isRecipient && !isGiver && !isInitiator && !isParticipant) {
+      throw new Error('You are not authorized to confirm handover for this transfer step');
+    }
+
+    // Update handover flag
+    step.handoverConfirmed = true;
+    step.handoverConfirmedAt = new Date();
+
+    // Ensure item status is updated to completed
+    try {
+      await listingStore.updateStatus(step.itemId, 'completed', step.fromUserId);
+    } catch (err) {
+      // Non-fatal if already completed
+    }
+
+    // Check if ALL steps are now confirmed
+    const allHandoversDone = proposal.steps.every(s => s.handoverConfirmed);
+    if (allHandoversDone) {
+      proposal.status = 'completed';
+
+      // Send completion notifications to all participants
+      for (const pId of proposal.participants) {
+        const pIdStr = (pId._id || pId).toString();
+        await notificationStore.create({
+          recipient: pIdStr,
+          sender: (proposal.initiator._id || proposal.initiator).toString(),
+          type: 'exchange_completed',
+          title: '🌟 Circular Swap Cycle Fully Completed!',
+          message: `All item handovers in your circular loop are complete! Thank you for advancing circular campus sustainability!`
+        });
+      }
+    }
+
+    if (proposal.save) await proposal.save();
+
+    return proposal.toJSON ? proposal.toJSON() : proposal;
+  }
+
+  /**
+   * Safely cancels/declines an active circular proposal and releases all reservations cleanly.
+   */
+  async cancelProposal({ proposalId, user }) {
+    const userId = (user._id || user.id || user).toString();
+    let proposal = null;
+    if (isDatabaseConnected()) {
+      try {
+        proposal = await CircularProposal.findById(proposalId);
+      } catch (err) {
+        console.warn('DB cancelProposal fallback:', err.message);
+      }
+    }
+    if (!proposal) {
+      proposal = this.memoryProposals.find(p => (p._id || p.id).toString() === proposalId);
+    }
+    if (!proposal) throw new Error(`Proposal ${proposalId} not found`);
+
+    const isParticipant = proposal.participants.some(p => (p._id || p).toString() === userId);
+    if (!isParticipant) throw new Error('Not authorized to cancel this circular proposal');
+
+    if (proposal.status === 'completed') {
+      throw new Error('Cannot cancel a completed exchange cycle');
+    }
+
+    proposal.status = 'declined';
+    if (proposal.save) await proposal.save();
+
+    // Notify participants
+    for (const pId of proposal.participants) {
+      const pIdStr = (pId._id || pId).toString();
+      if (pIdStr !== userId) {
+        await notificationStore.create({
+          recipient: pIdStr,
+          sender: userId,
+          type: 'request_rejected',
+          title: '❌ Circular Swap Cancelled',
+          message: `${user.name || 'A participant'} cancelled the circular swap proposal. No items were reserved or modified.`
+        });
+      }
+    }
+
+    return proposal.toJSON ? proposal.toJSON() : proposal;
   }
 }
 

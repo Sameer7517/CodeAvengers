@@ -641,6 +641,53 @@ export const AppProvider = ({ children }) => {
     return json.data;
   };
 
+  // Confirm Step Handover in Circular Swap
+  const confirmCircularHandover = async (proposalId, { stepIndex, itemId } = {}) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) throw new Error('Please sign in to confirm item handover');
+
+    const res = await fetch(`/api/circular-swap/proposals/${proposalId}/handover`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      },
+      body: JSON.stringify({ stepIndex, itemId })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to confirm item handover');
+    }
+
+    showToast('🤝 Handover verified! Item received.');
+    fetchNotifications();
+    return json.data;
+  };
+
+  // Cancel Circular Proposal
+  const cancelCircularProposal = async (proposalId) => {
+    const activeToken = token || localStorage.getItem('campusloop_token');
+    if (!activeToken) throw new Error('Please sign in to cancel proposal');
+
+    const res = await fetch(`/api/circular-swap/proposals/${proposalId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${activeToken}`
+      }
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Failed to cancel circular proposal');
+    }
+
+    showToast('❌ Circular swap proposal cancelled cleanly.');
+    fetchNotifications();
+    return json.data;
+  };
+
   // Fetch filtered listings from backend with pagination
   const fetchListingsApi = async (params = {}) => {
     const cleanParams = new URLSearchParams();
@@ -701,7 +748,9 @@ export const AppProvider = ({ children }) => {
         fetchCircularSuggestions,
         fetchUserProposals,
         proposeCircularCycle,
-        respondToCircularProposal
+        respondToCircularProposal,
+        confirmCircularHandover,
+        cancelCircularProposal
       }}
 
     >

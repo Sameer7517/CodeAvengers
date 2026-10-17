@@ -34,7 +34,9 @@ const proposalStepSchema = new mongoose.Schema(
     itemCategory: { type: String, default: '' },
     itemImageUrl: { type: String, default: '' },
     itemCo2Kg: { type: Number, default: 0 },
-    matchReason: { type: String, default: '' }
+    matchReason: { type: String, default: '' },
+    handoverConfirmed: { type: Boolean, default: false },
+    handoverConfirmedAt: { type: Date }
   },
   { _id: false }
 );
@@ -67,7 +69,7 @@ const circularProposalSchema = new mongoose.Schema(
     consents: [participantConsentSchema],
     status: {
       type: String,
-      enum: ['suggested', 'pending_consent', 'confirmed', 'declined', 'expired'],
+      enum: ['suggested', 'pending_consent', 'confirmed', 'completed', 'declined', 'expired'],
       default: 'pending_consent',
       index: true
     },

@@ -142,3 +142,57 @@ export const getProposalDetail = async (req, res) => {
     });
   }
 };
+
+/**
+ * Confirms item handover for a step in a confirmed circular swap.
+ */
+export const confirmStepHandover = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { stepIndex, itemId } = req.body;
+
+    const updatedProposal = await circularSwapStore.confirmStepHandover({
+      proposalId: id,
+      user: req.user,
+      stepIndex,
+      itemId
+    });
+
+    res.json({
+      success: true,
+      message: 'Step handover confirmed successfully',
+      data: updatedProposal
+    });
+  } catch (error) {
+    console.error('Error confirming step handover:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to confirm step handover'
+    });
+  }
+};
+
+/**
+ * Cancels an active circular proposal
+ */
+export const cancelProposal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedProposal = await circularSwapStore.cancelProposal({
+      proposalId: id,
+      user: req.user
+    });
+
+    res.json({
+      success: true,
+      message: 'Circular swap proposal cancelled',
+      data: updatedProposal
+    });
+  } catch (error) {
+    console.error('Error cancelling proposal:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to cancel proposal'
+    });
+  }
+};

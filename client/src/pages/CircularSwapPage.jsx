@@ -20,7 +20,10 @@ import {
   Send,
   ThumbsUp,
   ThumbsDown,
-  Info
+  Info,
+  PackageCheck,
+  Award,
+  Check
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -32,6 +35,8 @@ const CircularSwapPage = () => {
     fetchUserProposals,
     proposeCircularCycle,
     respondToCircularProposal,
+    confirmCircularHandover,
+    cancelCircularProposal,
     categories
   } = useApp();
 
@@ -43,6 +48,7 @@ const CircularSwapPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all'); // 'all' | '2-way' | '3-way'
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [handoverLoadingStepId, setHandoverLoadingStepId] = useState(null);
   const [declineModalProposalId, setDeclineModalProposalId] = useState(null);
   const [declineReason, setDeclineReason] = useState('');
 
@@ -99,6 +105,35 @@ const CircularSwapPage = () => {
       setDeclineReason('');
     } catch (err) {
       alert(err.message || 'Failed to respond to circular proposal');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Handle Confirming a Step Handover
+  const handleConfirmHandover = async (proposalId, stepIndex) => {
+    setHandoverLoadingStepId(`${proposalId}-${stepIndex}`);
+    try {
+      await confirmCircularHandover(proposalId, { stepIndex });
+      const updatedProposals = await fetchUserProposals();
+      setProposals(updatedProposals);
+    } catch (err) {
+      alert(err.message || 'Failed to confirm item handover');
+    } finally {
+      setHandoverLoadingStepId(null);
+    }
+  };
+
+  // Handle Cancelling a Proposal
+  const handleCancelProposal = async (proposalId) => {
+    if (!window.confirm('Are you sure you want to cancel this circular proposal? No items will be reserved.')) return;
+    setActionLoadingId(proposalId);
+    try {
+      await cancelCircularProposal(proposalId);
+      const updatedProposals = await fetchUserProposals();
+      setProposals(updatedProposals);
+    } catch (err) {
+      alert(err.message || 'Failed to cancel proposal');
     } finally {
       setActionLoadingId(null);
     }
@@ -327,6 +362,34 @@ const CircularSwapPage = () => {
                       </div>
                     </div>
 
+                    {/* Visual Loop Chain Overview */}
+                    <div className="p-4 rounded-2xl bg-sand-50/80 border border-sand-200">
+                      <div className="text-[11px] font-bold text-forest-600 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                        <RefreshCw className="w-3.5 h-3.5 text-forest-700 animate-spin-slow" />
+                        Circular Exchange Loop Architecture:
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {cycle.participants?.map((p, pIdx) => (
+                          <React.Fragment key={pIdx}>
+                            <div className="flex items-center gap-2.5 bg-white px-3 py-2 rounded-xl border border-sand-200 shadow-2xs">
+                              <img src={p.avatar} alt="" className="w-7 h-7 rounded-full object-cover border border-sand-200" />
+                              <div className="text-left">
+                                <div className="text-xs font-bold text-forest-950">{p.name}</div>
+                                <div className="text-[10px] text-forest-600">
+                                  gives <span className="font-semibold text-emerald-800">{p.givingItem?.title ? (p.givingItem.title.length > 20 ? p.givingItem.title.slice(0, 18) + '...' : p.givingItem.title) : 'Item'}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-forest-500 flex-shrink-0 animate-pulse" />
+                          </React.Fragment>
+                        ))}
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Loop Closes
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Step-by-Step Cycle Visual Flow */}
                     <div className="space-y-3">
                       <h4 className="text-xs font-bold text-forest-600 uppercase tracking-wider">
@@ -456,10 +519,12 @@ const CircularSwapPage = () => {
                   const myConsent = prop.consents?.find(
                     c => (c.userId?._id || c.userId || '').toString() === currentUserId?.toString()
                   );
+                  const isCompleted = prop.status === 'completed';
                   const isConfirmed = prop.status === 'confirmed';
                   const isDeclined = prop.status === 'declined';
                   const isExpired = prop.status === 'expired';
                   const isPending = prop.status === 'pending_consent';
+                  const isInitiator = (prop.initiator?._id || prop.initiator)?.toString() === currentUserId?.toString();
 
                   return (
                     <div
@@ -470,160 +535,303 @@ const CircularSwapPage = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sand-100 pb-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                              isConfirmed
-                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                                : isDeclined
-                                ? 'bg-rose-100 text-rose-900 border border-rose-200'
-                                : isExpired
-                                ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                                : 'bg-blue-100 text-blue-900 border border-blue-200'
-                            }`}>
-                              {isConfirmed && '🎉 Loop Confirmed & Finalized'}
-                              {isDeclined && '❌ Proposal Declined'}
-                              {isExpired && '⚠️ Expired (Item Unavailable)'}
-                              {isPending && '⏳ Awaiting Participant Consents'}
-                            </span>
-                            <span className="text-xs text-forest-600 bg-sand-100 px-2.5 py-1 rounded-full">
-                              {prop.cycleType || '3-way'} Loop
-                            </span>
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                isCompleted
+                                  ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                                  : isConfirmed
+                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                                  : isDeclined
+                                  ? 'bg-rose-100 text-rose-900 border border-rose-200'
+                                  : isExpired
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                                  : 'bg-blue-100 text-blue-900 border border-blue-200'
+                              }`}>
+                                {isCompleted && '🌟 Loop Completed & Handed Over'}
+                                {isConfirmed && '🤝 Loop Confirmed — Handover Active'}
+                                {isDeclined && '❌ Proposal Declined'}
+                                {isExpired && '⚠️ Expired (Item Unavailable)'}
+                                {isPending && '⏳ Awaiting Participant Consents'}
+                              </span>
+                              <span className="text-xs text-forest-600 bg-sand-100 px-2.5 py-1 rounded-full">
+                                {prop.cycleType || '3-way'} Loop
+                              </span>
+                              {isInitiator && (
+                                <span className="text-[11px] font-semibold text-forest-700 bg-sage-100 px-2 py-0.5 rounded-full border border-sage-200">
+                                  You Initiated
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-base font-bold text-forest-950">{prop.summaryText || 'Multi-Student Circular Swap'}</h4>
                           </div>
-                          <h4 className="text-base font-bold text-forest-950">{prop.summaryText || 'Multi-Student Circular Swap'}</h4>
-                        </div>
 
-                        <div className="text-xs text-forest-600 font-medium">
-                          Created {new Date(prop.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      {/* Revalidation Error Banner (if expired) */}
-                      {isExpired && prop.revalidationError && (
-                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-                          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <strong className="font-semibold">Revalidation Abort: </strong>
-                            {prop.revalidationError}
+                          <div className="flex items-center gap-3">
+                            <div className="text-xs text-forest-600 font-medium">
+                              Created {new Date(prop.createdAt).toLocaleDateString()}
+                            </div>
+                            {isPending && isInitiator && (
+                              <button
+                                onClick={() => handleCancelProposal(prop.id)}
+                                disabled={actionLoadingId === prop.id}
+                                className="text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition"
+                              >
+                                Cancel Proposal
+                              </button>
+                            )}
                           </div>
                         </div>
-                      )}
 
-                      {/* Participant Consents Tracker */}
-                      <div className="space-y-2">
-                        <h5 className="text-xs font-bold text-forest-600 uppercase tracking-wider">
-                          Participant Explicit Consent Status:
-                        </h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {prop.consents?.map((c, i) => (
-                            <div
-                              key={i}
-                              className="p-3 rounded-xl bg-sand-50 border border-sand-200 flex items-center justify-between"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <img
-                                  src={c.userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-                                  alt=""
-                                  className="w-8 h-8 rounded-full object-cover border border-sand-200 flex-shrink-0"
-                                />
-                                <div className="truncate">
-                                  <div className="font-semibold text-xs text-forest-950 truncate">
-                                    {c.userName}
-                                  </div>
-                                  <div className="text-[10px] text-forest-600 truncate">
-                                    {c.userDepartment || 'Student'}
+                        {/* Revalidation Error Banner (if expired) */}
+                        {isExpired && prop.revalidationError && (
+                          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="font-semibold">Revalidation Abort: </strong>
+                              {prop.revalidationError}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Participant Consents Tracker */}
+                        <div className="space-y-2">
+                          <h5 className="text-xs font-bold text-forest-600 uppercase tracking-wider">
+                            Participant Explicit Consent Status:
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {prop.consents?.map((c, i) => (
+                              <div
+                                key={i}
+                                className="p-3 rounded-xl bg-sand-50 border border-sand-200 flex items-center justify-between"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <img
+                                    src={c.userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
+                                    alt=""
+                                    className="w-8 h-8 rounded-full object-cover border border-sand-200 flex-shrink-0"
+                                  />
+                                  <div className="truncate">
+                                    <div className="font-semibold text-xs text-forest-950 truncate">
+                                      {c.userName}
+                                    </div>
+                                    <div className="text-[10px] text-forest-600 truncate">
+                                      {c.userDepartment || 'Student'}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
+                                <div>
+                                  {c.status === 'accepted' && (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      Agreed
+                                    </span>
+                                  )}
+                                  {c.status === 'declined' && (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                                      <XCircle className="w-3 h-3" />
+                                      Declined
+                                    </span>
+                                  )}
+                                  {c.status === 'pending' && (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                      <Clock className="w-3 h-3" />
+                                      Pending
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Handover & Transfer Steps Flow */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h5 className="text-xs font-bold text-forest-600 uppercase tracking-wider flex items-center gap-1.5">
+                              <PackageCheck className="w-3.5 h-3.5 text-forest-600" />
+                              Exchange Handover Tracking ({prop.steps?.filter(s => s.handoverConfirmed).length || 0} / {prop.steps?.length || 0} Handovers Complete):
+                            </h5>
+                            {(isConfirmed || isCompleted) && (
+                              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                {isCompleted ? 'All Handovers Confirmed' : 'Handover Active — Confirm Receipt Below'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {prop.steps?.map((step, idx) => {
+                              const isMyIncomingItem = step.toUserId === currentUserId?.toString();
+                              const isMyOutgoingItem = step.fromUserId === currentUserId?.toString();
+                              const isStepHandoverLoading = handoverLoadingStepId === `${prop.id}-${idx}`;
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+                                    step.handoverConfirmed
+                                      ? 'bg-emerald-50/50 border-emerald-200/80'
+                                      : 'bg-white border-sand-200 shadow-xs'
+                                  }`}
+                                >
+                                  <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[11px] font-bold text-forest-600 bg-sand-100 px-2 py-0.5 rounded-md">
+                                        Transfer {idx + 1}
+                                      </span>
+                                      {step.handoverConfirmed ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                          Received
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                          <Clock className="w-3 h-3 text-amber-600" />
+                                          Pending Handover
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 bg-sand-50/70 p-2.5 rounded-xl border border-sand-200/60">
+                                      <img
+                                        src={step.itemImageUrl}
+                                        alt={step.itemTitle}
+                                        className="w-12 h-12 rounded-lg object-cover border border-sand-100 flex-shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-semibold text-xs text-forest-950 truncate" title={step.itemTitle}>
+                                          {step.itemTitle}
+                                        </div>
+                                        <div className="text-[10px] text-forest-600 flex items-center gap-1.5 mt-0.5">
+                                          <span className="capitalize">{step.itemCategory}</span>
+                                          <span>·</span>
+                                          <span className="text-emerald-700 font-medium">+{step.itemCo2Kg}kg CO₂</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="text-[11px] space-y-1 text-forest-700">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-forest-600">From:</span>
+                                        <span className="font-semibold text-forest-950 flex items-center gap-1">
+                                          {step.fromUserName} {isMyOutgoingItem && <span className="text-emerald-700 font-bold">(You)</span>}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-forest-600">To:</span>
+                                        <span className="font-semibold text-forest-950 flex items-center gap-1">
+                                          {step.toUserName} {isMyIncomingItem && <span className="text-emerald-700 font-bold">(You)</span>}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Interactive Handover Button */}
+                                  {(isConfirmed || isCompleted) && !step.handoverConfirmed && (isMyIncomingItem || isMyOutgoingItem || isInitiator) && (
+                                    <button
+                                      onClick={() => handleConfirmHandover(prop.id, idx)}
+                                      disabled={isStepHandoverLoading}
+                                      className="w-full mt-2 py-2 px-3 bg-forest-900 hover:bg-forest-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs disabled:opacity-50"
+                                    >
+                                      {isStepHandoverLoading ? (
+                                        <>
+                                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                          Confirming...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <PackageCheck className="w-3.5 h-3.5 text-sage-400" />
+                                          {isMyIncomingItem ? 'Confirm Item Received' : 'Confirm Handover Done'}
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+
+                                  {step.handoverConfirmed && (
+                                    <div className="text-center py-1 text-[11px] text-emerald-800 font-medium flex items-center justify-center gap-1 bg-emerald-50 rounded-lg">
+                                      <Check className="w-3 h-3 text-emerald-600" />
+                                      Handover verified
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* User's Action Section if Pending Consent */}
+                        {isPending && myConsent?.status === 'pending' && (
+                          <div className="p-4 rounded-2xl bg-forest-50/70 border border-forest-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <h6 className="font-bold text-sm text-forest-950">Your Explicit Consent Required</h6>
+                              <p className="text-xs text-forest-700 mt-0.5">
+                                Do you agree to participate in this circular exchange loop? Items are only finalized if all peers consent.
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-start sm:self-auto">
+                              <button
+                                onClick={() => handleRespond(prop.id, 'accepted')}
+                                disabled={actionLoadingId === prop.id}
+                                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
+                              >
+                                <ThumbsUp className="w-3.5 h-3.5" />
+                                Accept Loop
+                              </button>
+                              <button
+                                onClick={() => setDeclineModalProposalId(prop.id)}
+                                disabled={actionLoadingId === prop.id}
+                                className="px-4 py-2 bg-white hover:bg-sand-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
+                              >
+                                <ThumbsDown className="w-3.5 h-3.5" />
+                                Decline
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Handover in progress banner */}
+                        {isConfirmed && !isCompleted && (
+                          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                              <div className="text-xs">
+                                <strong className="font-bold text-emerald-900">All Participants Agreed! </strong>
+                                The circular exchange is confirmed. Meet safely on campus (e.g. library reading room or canteen lawn) to complete handovers and confirm receipt above.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Full Completion Celebration Banner */}
+                        {isCompleted && (
+                          <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-900 via-forest-900 to-emerald-950 text-white shadow-md border border-emerald-700/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-400/30">
+                                <Award className="w-6 h-6 text-emerald-400" />
+                              </div>
                               <div>
-                                {c.status === 'accepted' && (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    Agreed
+                                <h5 className="font-bold text-sm text-white flex items-center gap-2">
+                                  Circular Loop Successfully Completed!
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30 uppercase">
+                                    All Handovers Done
                                   </span>
-                                )}
-                                {c.status === 'declined' && (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                                    <XCircle className="w-3 h-3" />
-                                    Declined
-                                  </span>
-                                )}
-                                {c.status === 'pending' && (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                                    <Clock className="w-3 h-3" />
-                                    Pending
-                                  </span>
-                                )}
+                                </h5>
+                                <p className="text-xs text-sage-200 mt-0.5">
+                                  Every participant confirmed handover! Together you diverted {prop.totalCo2SavedKg}kg of CO₂ and saved ₹{prop.totalDollarsSaved}.
+                                </p>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Transfer Steps Flow */}
-                      <div className="space-y-2">
-                        <h5 className="text-xs font-bold text-forest-600 uppercase tracking-wider">
-                          Exchange Items in Loop:
-                        </h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {prop.steps?.map((step, idx) => (
-                            <div key={idx} className="p-3 bg-white rounded-xl border border-sand-200 flex items-center gap-3">
-                              <img
-                                src={step.itemImageUrl}
-                                alt={step.itemTitle}
-                                className="w-10 h-10 rounded-lg object-cover border border-sand-100 flex-shrink-0"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="font-medium text-xs text-forest-950 truncate">{step.itemTitle}</div>
-                                <div className="text-[10px] text-forest-600">
-                                  {step.fromUserName} → {step.toUserName}
-                                </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <div className="px-3.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 text-center">
+                                <div className="text-[10px] uppercase font-bold text-sage-300 tracking-wider">Eco-Karma</div>
+                                <div className="font-extrabold text-sm text-amber-300">+35 Pts</div>
+                              </div>
+                              <div className="px-3.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 text-center">
+                                <div className="text-[10px] uppercase font-bold text-sage-300 tracking-wider">CO₂ Averted</div>
+                                <div className="font-extrabold text-sm text-emerald-300">{prop.totalCo2SavedKg} kg</div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* User's Action Section if Pending */}
-                      {isPending && myConsent?.status === 'pending' && (
-                        <div className="p-4 rounded-2xl bg-forest-50/70 border border-forest-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div>
-                            <h6 className="font-bold text-sm text-forest-950">Your Explicit Consent Required</h6>
-                            <p className="text-xs text-forest-700 mt-0.5">
-                              Do you agree to participate in this circular exchange loop? Items are only finalized if all peers consent.
-                            </p>
                           </div>
-
-                          <div className="flex items-center gap-2 self-start sm:self-auto">
-                            <button
-                              onClick={() => handleRespond(prop.id, 'accepted')}
-                              disabled={actionLoadingId === prop.id}
-                              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
-                            >
-                              <ThumbsUp className="w-3.5 h-3.5" />
-                              Accept Loop
-                            </button>
-                            <button
-                              onClick={() => setDeclineModalProposalId(prop.id)}
-                              disabled={actionLoadingId === prop.id}
-                              className="px-4 py-2 bg-white hover:bg-sand-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
-                            >
-                              <ThumbsDown className="w-3.5 h-3.5" />
-                              Decline
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Confirmation Success Message */}
-                      {isConfirmed && (
-                        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                          <div className="text-xs">
-                            <strong className="font-semibold">Exchange Completed! </strong>
-                            All participants approved. Items were transitioned to completed, averting {prop.totalCo2SavedKg}kg CO₂ and awarding +35 Eco-Karma.
-                          </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   );
                 })}

@@ -4,7 +4,9 @@ import {
   proposeCycle,
   respondToProposal,
   getUserProposals,
-  getProposalDetail
+  getProposalDetail,
+  confirmStepHandover,
+  cancelProposal
 } from '../controllers/circularSwapController.js';
 import { protect, optionalAuth } from '../middleware/authMiddleware.js';
 
@@ -19,5 +21,7 @@ router.get('/proposals', getUserProposals);
 router.get('/proposals/:id', getProposalDetail);
 router.post('/propose', proposeCycle);
 router.post('/proposals/:id/respond', respondToProposal);
+router.post('/proposals/:id/handover', confirmStepHandover);
+router.post('/proposals/:id/cancel', cancelProposal);
 
 export default router;

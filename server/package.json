@@ -8,12 +8,13 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/scripts/seed.js",
-    "test": "node tests/cycleDetection.unit.test.js && node tests/auth.test.js && node tests/marketplace.test.js && node tests/exchange.test.js && node tests/circularSwap.test.js && node tests/e2eJourneys.test.js",
+    "test": "node tests/cycleDetection.unit.test.js && node tests/auth.test.js && node tests/marketplace.test.js && node tests/exchange.test.js && node tests/circularSwap.test.js && node tests/circularSwapHandover.test.js && node tests/e2eJourneys.test.js",
     "test:cycle": "node tests/cycleDetection.unit.test.js",
     "test:auth": "node tests/auth.test.js",
     "test:marketplace": "node tests/marketplace.test.js",
     "test:exchange": "node tests/exchange.test.js",
     "test:circular": "node tests/circularSwap.test.js",
+    "test:handover": "node tests/circularSwapHandover.test.js",
     "test:e2e": "node tests/e2eJourneys.test.js"
   },
 
