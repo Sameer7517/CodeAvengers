@@ -1,266 +1,224 @@
 # CodeAvengers — CampusLoop: Collegiate Circular Exchange & Reuse Marketplace
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-success?logo=vercel&style=for-the-badge)](https://code-avengers.vercel.app/)
+[![Demo Video](https://img.shields.io/badge/Demo-Video%20Walkthrough-red?logo=youtube&style=for-the-badge)](#-video-demonstration-link)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-CodeAvengers-blue?logo=github&style=for-the-badge)](https://github.com/Sameer7517/CodeAvengers)
-[![Tests Passing](https://img.shields.io/badge/Tests-126%2F126%20Passing-brightgreen?style=for-the-badge)](file:///d:/OneDrive/Desktop/CampusLoop/server/tests)
-[![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
+[![Tests](https://img.shields.io/badge/Automated%20Tests-126%2F126%20Passed-brightgreen?style=for-the-badge)](file:///d:/OneDrive/Desktop/CampusLoop/server/tests)
 
 > **Campus Sustainability Hackathon 2026**  
 > An eco-conscious, hyper-local circular reuse platform connecting college students to buy, sell, donate, and exchange textbooks, lab essentials, calculators, and study supplies while shrinking the collegiate carbon footprint.
 
 ---
 
-## 🔗 Quick Links & Live Demos
+## 🔗 Project Links
 
-| Resource | Link | Description |
+| Resource | URL | Description |
 | :--- | :--- | :--- |
-| 🌐 **Live Web Application** | **[https://code-avengers.vercel.app/](https://code-avengers.vercel.app/)** | Hosted on Vercel with continuous deployment |
-| 🎥 **Project Demo Video** | **[Watch Demo Video on YouTube / Drive](#-video-demonstration)** | Complete walkthrough of features & workflows |
+| 🌐 **Live Web Application** | **[https://code-avengers.vercel.app/](https://code-avengers.vercel.app/)** | Production frontend hosted on Vercel |
+| 🎥 **Video Demonstration** | **[Watch Demonstration Video](#-video-demonstration-link)** | Complete project walkthrough and feature showcase |
 | 💻 **Source Code Repository** | **[https://github.com/Sameer7517/CodeAvengers](https://github.com/Sameer7517/CodeAvengers)** | Full-stack MERN monorepo |
-| ⚡ **Backend API Health Check** | **`https://campusloop-api.onrender.com/api/health`** | Express REST API health check endpoint |
+| ⚡ **Backend API Health Check** | **`https://campusloop-api.onrender.com/api/health`** | Express REST API on Render |
 
 ---
 
-## 🎥 Video Demonstration
+## 🎥 Video Demonstration Link
 
 > 📺 **Click below to watch the complete end-to-end walkthrough of CampusLoop:**  
 > **[▶️ Watch CampusLoop Demonstration Video](https://code-avengers.vercel.app/)**  
-> *(Replace with your YouTube, Loom, or Google Drive demonstration video link)*
+> *(Insert your YouTube, Loom, or Google Drive demonstration link here)*
 
-### Demo Highlights Covered in the Video:
-1. **Student Onboarding:** Instant college selection (**PVG's COET, Pune**, COEP, VJTI, etc.), institutional verification, and dynamic initials-based SVG avatars.
-2. **Item Listing & Live Carbon Calculator:** Listing Indian curriculum engineering textbooks (Nirali Prakashan, TechKnowledge, Technical Publications), Casio scientific calculators, and lab gear with dynamic carbon offset calculation in Indian Rupees (₹).
-3. **Direct Peer Swaps & Safe Zones:** Two-phase item reservation, meetup scheduling at campus-verified safe zones, and handover confirmation with Eco-Karma awards.
-4. **Circular Swap Finder:** Visualizing and executing multi-party trade cycles ($A \to B \to C \to A$) with transparent match affinity.
-5. **Campus Sustainability Dashboard:** Live tracking of kg CO₂ avoided, trees saved, and the campus student leaderboard.
-
----
-
-## 🌍 The Problem & CampusLoop Solution
-
-### The Challenge
-Every semester, thousands of rupees worth of functional course materials (engineering textbooks, lab aprons, drafters, Casio calculators, and electronics kits) end up forgotten in dorm cupboards or dumped in municipal waste. Simultaneously, junior students shell out exorbitant amounts for brand-new gear.
-
-### The Solution
-**CampusLoop** establishes a closed-loop collegiate peer exchange:
-- **Zero Waste to Landfills:** Keeps reusable academic tools in continuous circulation.
-- **Avoided Carbon Footprint:** Slashes supply-chain and manufacturing emissions for newly produced books and electronics.
-- **Affordable Academics:** Slashes student costs by 60%–100% through direct trades and free donations.
-- **Hyper-Local Campus Safety:** Restricts listings to campus communities and conducts physical exchanges at well-lit, campus-verified **Safe Exchange Zones**.
-- **Circular Swap Engine:** Solves trade deadlocks by discovering 3-way circular trade loops ($A \to B \to C \to A$) when direct 1-to-1 trades cannot be made.
+**In this video demonstration:**
+1. **User Onboarding:** Instant registration with college affiliation (**PVG's COET, Pune**, COEP, VJTI, etc.) and auto-generated initials-based SVG avatars.
+2. **Item Cataloging:** Listing engineering textbooks (Nirali Prakashan, TechKnowledge), Casio scientific calculators, and lab aprons in INR (₹) with real-time carbon offset calculation.
+3. **Direct Peer Swaps:** Two-phase item reservation, meetup scheduling at campus-verified safe zones, and handover confirmation with Eco-Karma points.
+4. **Circular Swap Finder:** Visualizing and executing multi-party trade cycles ($A \to B \to C \to A$) when direct 1-to-1 trades cannot be resolved.
+5. **Campus Sustainability Dashboard:** Live impact metrics (kg CO₂e avoided, trees saved) and student leaderboard.
 
 ---
 
-## ⚙️ Overall Working & System Flow
+## 🚨 Problem Statement
 
-```mermaid
-graph TD
-    A[Student Registers] --> B[Initial Avatar Generated & College Selected]
-    B --> C[Browse Marketplace or List Item]
-    
-    C -->|List Course Gear| D[Set Category, Desired Item & INR ₹ Price]
-    D --> E[Real-Time Carbon Savings Computed]
-    E --> F[Published as Available]
-    
-    C -->|Discover Listing| G{Select Trade Type}
-    G -->|Direct Swap| H[Student B Offers Matching Item]
-    G -->|Give Away| I[Free Claim Request]
-    G -->|Direct Purchase| J[Cash/UPI Handover Request]
-    
-    H & I & J --> K[Owner Accepts Proposal]
-    K --> L[Consistent Two-Way Item Reservation]
-    L --> M[Meetup at Verified Campus Safe Zone]
-    M --> N[Handover Confirmed & +50 Eco-Karma Awarded]
-    N --> O[Sustainability Dashboard Updated]
-    
-    F --> P[Circular Swap Engine Scans Graph]
-    P --> Q{Multi-Party Loop Detected?}
-    Q -->|A → B → C → A| R[Generate Cycle Proposal & Visual Loop]
-    R --> S[All 3 Students Provide Consent]
-    S --> T[Simultaneous Handover & Eco-Karma Distribution]
+Every academic semester, thousands of rupees worth of functional course materials (engineering textbooks, drafters, scientific calculators, and lab coats) end up dumped into municipal landfills or left unused in dorm rooms. At the same time, newly admitted students face steep retail prices at campus bookstores:
+
+- **Landfill Burden:** Solid academic waste accumulates at the end of every semester.
+- **Embedded Carbon Waste:** Manufacturing new paper books, plastic calculators, and cotton lab coats generates significant greenhouse gas emissions and depletes forest resources.
+- **Financial Strain:** Students frequently spend ₹5,000–₹12,000 per term on supplies they only use for 4 months.
+- **Lack of Campus Trust:** Existing public classifieds (OLX, Craigslist) lack collegiate verification, expose students to scams, and fail to offer safe, on-campus physical exchange locations.
+- **Trade Deadlocks:** Students with specific items to trade often cannot find another student who wants what they have and possesses what they need (**"Double Coincidence of Wants"** problem).
+
+---
+
+## 💡 Solution
+
+**CampusLoop** solves these challenges through an intelligent, hyper-local circular reuse ecosystem:
+
+1. **Hyper-Local Campus Trust:** Closed network for verified college communities (e.g., PVG's COET, Pune) with designated, well-lit physical **Safe Exchange Zones** on campus.
+2. **Circular Swap Finder:** A graph-based algorithmic engine that finds 3-way circular trade loops ($A \to B \to C \to A$) to resolve trade deadlocks.
+3. **Automated Carbon Footprint Metrics:** Real-time Life Cycle Assessment (LCA) algorithms calculate avoided kg CO₂e and trees saved for every listed and completed item.
+4. **Three Flexible Exchange Modes:** Direct Swaps (1-to-1 trades), Free Giveaways (donations for seniors to juniors), and Affordable Direct Sales in Indian Rupees (₹).
+5. **Two-Phase Reservation & Handover:** Concurrency-safe item reservation locking ensures no items are double-claimed, rewarding students with **Eco-Karma** upon verified physical handover.
+
+---
+
+## ✨ Key Features
+
+- **🎓 Verified College Marketplace:** Tailored for Indian engineering colleges (PVG's COET Pune, COEP, VJTI, PICT) with regional curriculum book publishers (Nirali Prakashan, TechKnowledge, Technical Publications) and instruments (Casio fx-991EX/CW).
+- **🔄 Circular Swap Finder (Multi-Party Loop Detection):** Detects 2-way and 3-way circular loops ($A \to B \to C \to A$) with transparent match affinity explanations and multi-party atomic consent workflows.
+- **🌱 Live Carbon Savings Calculator:** Dynamically computes embodied carbon avoided (kg CO₂e) as students enter item specifications.
+- **🛡️ Campus Safe Exchange Zones:** Integrates designated physical exchange spots (e.g., Central Library Lobby, Campus Cafeteria, Security Gate) to safeguard physical handovers.
+- **🎨 Privacy-First SVG Initials Avatars:** Generates clean, deterministic SVG avatars from student initials, eliminating stock photos and maintaining profile consistency.
+- **📊 Verified Sustainability Dashboard & Leaderboard:** Tracks verified platform reuse metrics with strict segregation of actual completed exchanges vs. catalog potentials, honoring top recyclers.
+- **🔔 In-App Notifications:** Real-time updates for exchange requests, trade loop invitations, and handover confirmations.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Vanilla CSS / Tailwind CSS, Lucide React Icons, Canvas Confetti |
+| **Backend** | Node.js, Express.js, JSON Web Tokens (JWT), Bcrypt.js |
+| **Database & ODM** | MongoDB Atlas, Mongoose ODM + Resilient In-Memory Fallback Engine |
+| **State Management** | React Context API (`AppContext`) with dynamic API routing |
+| **Hosting & Cloud** | **Vercel** (Frontend SPA), **Render** (Backend Node Web Service) |
+| **Testing** | Node.js Native Test Runner with Supertest & custom assertion harness |
+
+---
+
+## ⚖️ Tech-Stack Justification
+
+Why did we select these specific technologies over alternatives?
+
+| Technology Chosen | Alternative Considered | Justification & Architectural Advantage |
+| :--- | :--- | :--- |
+| **React 18 + Vite** | Next.js / Create React App | Vite delivers near-instant Cold Starts and sub-second HMR (<100ms) during development. A Single Page Application (SPA) with React Router provides smooth transitions without unnecessary server-side rendering overhead for an interactive marketplace dashboard. |
+| **Node.js & Express.js** | Django / Spring Boot | Node's non-blocking, event-driven asynchronous I/O enables high-throughput handling of concurrent marketplace browsing and atomic cycle-detection requests. Using JavaScript across the entire stack streamlines model sharing and developer velocity. |
+| **MongoDB + Mongoose** | PostgreSQL / MySQL | Campus listings have heterogeneous, flexible attributes (book editions, calculator models, trade preferences, multi-party loop consent maps). A document-oriented store naturally models nested data like exchange histories, desired item wishlists, and participant consent trees. |
+| **Resilient In-Memory Fallback** | Hard Database Dependency | Ensures **100% platform availability**. If cloud MongoDB Atlas undergoes maintenance or has connection timeouts, CampusLoop automatically activates its in-memory transactional store so students and evaluators can continue testing all features without friction. |
+| **Tailwind CSS + Custom Tokens** | Material UI / Bootstrap | Tailwind provides utility-first flexibility to create a tailored, eco-conscious aesthetic (Forest Green `#1b4634`, Sage Green `#5e8c64`, and Cream `#f9f9f6`) with zero unused CSS bundle bloat. |
+| **Vercel & Render** | AWS EC2 / DigitalOcean | Vercel provides instant global Edge CDN distribution and automatic SPA rewrite handling for the frontend. Render provides a lightweight containerized runtime for the Node.js backend with automated health monitoring. |
+
+---
+
+## ⚙️ Methodology & Algorithmic Design
+
+### 1. The Circular Swap Finder (Graph Cycle Detection)
+Direct peer trades often stall due to mismatch in desires. CampusLoop models listings as a **Directed Graph** $G = (V, E)$:
+- **Vertices ($V$):** Active student listings.
+- **Directed Edges ($E$):** An edge $u \to v$ exists if listing $v$ fulfills the wishlist criteria (`desiredItems` / category) of listing $u$.
+
 ```
-
-### End-to-End User Journey:
-1. **Onboarding & Verification:** Students register with their college email and select their campus (e.g., PVG's COET Pune). The system assigns a personalized SVG avatar derived from their name initials (eliminating stock/fake photos).
-2. **Cataloging & Smart Valuation:** Students list their academic assets with realistic Indian curriculum brands (Nirali, TechKnowledge, Casio). The platform automatically calculates estimated carbon offset (kg CO₂e) and locked pricing in INR (₹).
-3. **Discovery & Filtering:** Junior students filter listings by category, campus, condition, and exchange type (Swap, Free Giveaway, or Buy).
-4. **Exchange Negotiation:** Two-phase transaction flow where proposing an exchange locks both items in an amber `Reserved` state once accepted, preventing double-swaps or conflicting trades.
-5. **Physical Meetup & Safety:** Students agree on a designated safe campus spot (e.g., Central Library Lobby or Campus Cafeteria).
-6. **Closing the Loop:** Both parties confirm the physical exchange, items mark as `Completed`, and both students earn **Eco-Karma points** visible on the campus sustainability leaderboard.
-
----
-
-## 🧠 Methodology & Algorithmic Foundations
-
-CampusLoop is built on three core methodologies:
-
-### 1. The Circular Swap Finder (Graph Cycle Algorithm)
-Direct peer-to-peer exchanges frequently fail due to the **"Double Coincidence of Wants"** problem:
-> *Student A has a Nirali Engineering Mathematics book and wants a Casio fx-991CW calculator.*  
-> *Student B has a Casio calculator but wants an Engineering Mechanics drafter.*  
-> *Direct swap is impossible between A and B.*
-
-**CampusLoop's Algorithmic Solution:**
-We model the campus marketplace as a **Directed Exchange Graph** $G = (V, E)$:
-- **Vertices ($V$):** Active listings owned by distinct students.
-- **Directed Edges ($E$):** An edge exists from listing $u \to v$ if the item offered by listing $v$ satisfies the wishlist criteria (`desiredItems` / category) specified by the owner of listing $u$.
-
-```
-Student A (Has: Nirali Maths | Wants: Casio Calculator)
+Student A (Gives: Nirali Maths Book ──► Wants: Casio Calculator)
        │
-       ▼ (Passes Nirali Maths to)
-Student C (Has: Drafter Kit | Wants: Nirali Maths)
+       ▼ (passes Maths book to)
+Student C (Gives: Drafter Kit ─────────► Wants: Nirali Maths Book)
        │
-       ▼ (Passes Drafter Kit to)
-Student B (Has: Casio Calculator | Wants: Drafter Kit)
+       ▼ (passes Drafter kit to)
+Student B (Gives: Casio Calculator ───► Wants: Drafter Kit)
        │
-       ▼ (Passes Casio Calculator to)
-Student A  [CYCLE COMPLETE: A → C → B → A]
+       ▼ (passes Calculator to)
+Student A  [CYCLE RESOLVED: A → C → B → A]
 ```
 
-- **Cycle Detection:** The engine applies a depth-first search (DFS) with cycle tracking to discover simple directed cycles of length $k \in \{2, 3\}$.
-- **Match Affinity Scoring:** Evaluates exact token matches, category alignment, and substring similarity between `desiredItems` and target listing titles.
-- **Safety & Atomic Consent:** Prospective loops are displayed as suggestions with full transparency. Once proposed, an atomic multi-party consent contract requires all $k$ participants to accept. If any item becomes unavailable before finalization, the loop gracefully invalidates to prevent broken transactions.
+- **Algorithm:** Runs Depth-First Search (DFS) with path backtracking to find simple cycles of length $k \in \{2, 3\}$.
+- **Match Affinity:** Tokenizes titles and categories using substring matching to provide transparent match rationales.
+- **Atomic Consent:** Loops are proposed as non-binding suggestions. All $k$ participants must explicitly consent before any item status updates to `Reserved`. If an item is traded elsewhere, the loop safely auto-invalidates.
+
+### 2. Carbon Footprint Life-Cycle Assessment (LCA)
+Environmental savings are calculated using empirical category benchmarks:
+
+$$\text{Avoided Emissions (kg CO}_2\text{e)} = \sum_{i=1}^{n} \text{Benchmark Factor}(\text{Category}_i)$$
+
+- **Textbooks & Notes:** `10.4 kg CO₂e` avoided per reused book (saves pulp, paper processing, chemical dyes, shipping).
+- **Calculators & Tech:** `18.5 kg CO₂e` avoided (saves semiconductor manufacturing and toxic e-waste).
+- **Lab Essentials & Coats:** `7.2 kg CO₂e` avoided (saves industrial cotton processing and synthetic dyeing).
+- **Stationery & Drafters:** `3.8 kg CO₂e` avoided (saves virgin plastic and aluminum extrusion).
 
 ---
 
-### 2. Carbon Footprint Savings & Life Cycle Assessment (LCA)
-CampusLoop quantifies the environmental benefit of every reuse transaction using verified Life Cycle Assessment (LCA) environmental benchmarks:
+## 🚀 Setup & Usage Instructions
 
-$$\text{Total CO}_2 \text{ Avoided} = \sum_{i=1}^{n} \text{Embodied Emission Factor}(\text{Category}_i)$$
-
-| Category | Benchmark Factor | Environmental Reference Basis |
-| :--- | :---: | :--- |
-| **Textbooks & Academic Notes** | **10.4 kg CO₂e** | Avoids tree harvesting, chemical pulping, paper milling & freight transport. |
-| **Scientific Calculators & Tech** | **18.5 kg CO₂e** | Avoids semiconductor wafer fabrication, plastics moulding, and e-waste landfilling. |
-| **Lab Coats & Engineering Kits** | **7.2 kg CO₂e** | Avoids industrial cotton processing, chemical dyeing, and synthetic textile waste. |
-| **Drafting Tools & Stationery** | **3.8 kg CO₂e** | Avoids virgin acrylic, polystyrene, and stainless steel manufacturing. |
-
-*Metrics are strictly categorized into **Actual Impact** (from completed exchanges) and **Potential Impact** (from active catalog listings).*
+### Prerequisites
+- **Node.js:** v18.0.0 or higher
+- **npm:** v9.0.0 or higher
+- **Git**
 
 ---
 
-### 3. Hyper-Local Campus Safety & Verification Protocol
-- **Campus Geo-Fencing:** Filter and discover items specifically within participating institutions (e.g., PVG's COET Pune, COEP Technological University, VJTI Mumbai, PICT Pune).
-- **Physical Safe Exchange Zones:** The system routes transactions to verified, public, well-lit university locations with high foot traffic and security presence.
-- **Privacy-First Avatars:** Zero unverified image uploads. Student profiles display standardized initials-based SVG graphics generated deterministically on client and server.
-
----
-
-## 🏗️ Technical Architecture & Stack
-
-CampusLoop utilizes the modern **MERN (MongoDB, Express, React, Node.js)** architecture:
-
-```
-CampusLoop/
-├── client/                     # Frontend Application (React 18 + Vite)
-│   ├── src/
-│   │   ├── components/         # ItemCard, Navbar, Footer, ItemDetailModal, etc.
-│   │   ├── pages/              # Marketplace, CircularSwap, Impact, Dashboard, Auth
-│   │   ├── context/            # Global AppContext with dynamic API resolver
-│   │   ├── utils/              # api.js, avatar.js (deterministic SVG initials generator)
-│   │   └── data/               # Regional Indian engineering catalog defaults
-│   ├── vercel.json             # Single Page Application (SPA) routing configuration
-│   └── vite.config.js          # Fast HMR & build settings
-│
-├── server/                     # Backend API (Express.js + Node.js)
-│   ├── src/
-│   │   ├── controllers/        # Auth, Listings, Exchanges, CircularSwap, Stats
-│   │   ├── models/             # Mongoose Models (User, Listing, Exchange, Proposal)
-│   │   ├── routes/             # RESTful API Endpoints
-│   │   ├── services/           # Graph cycle detection engine, store & in-memory fallbacks
-│   │   ├── utils/              # JWT token generator, avatar generator
-│   │   └── server.js           # Express app with dynamic CORS support
-│   └── tests/                  # 126 Automated Unit & Integration Tests
-│
-├── render.yaml                 # Infrastructure as Code blueprint for Render
-└── README.md                   # Project documentation
-```
-
-### Technology Highlights:
-- **Frontend:** React 18, Vite, Tailwind CSS, Lucide Icons, Canvas Confetti.
-- **Backend:** Node.js, Express.js, JSON Web Tokens (JWT), Bcrypt password hashing.
-- **Database & Resilience:** MongoDB Atlas with Mongoose ODM + automated **In-Memory Fallback Repository** (the entire app runs seamlessly even without an external database).
-- **Hosting & DevOps:** Frontend deployed on **Vercel** with instant edge CDN; Backend deployed on **Render** with health checks.
-
----
-
-## 📡 REST API Reference
-
-| Endpoint | Method | Access | Description |
-| :--- | :---: | :---: | :--- |
-| `/api/auth/register` | `POST` | Public | Register new student with college affiliation & auto-avatar |
-| `/api/auth/login` | `POST` | Public | Authenticate student and issue signed JWT Bearer token |
-| `/api/auth/me` | `GET` | Authenticated | Retrieve authenticated student profile & statistics |
-| `/api/listings` | `GET` | Public | Search, filter, and paginate items by category, type, and price |
-| `/api/listings` | `POST` | Authenticated | Create a new listing with real-time carbon calculation |
-| `/api/listings/:id` | `GET` | Public | Fetch comprehensive item details and seller information |
-| `/api/exchanges` | `POST` | Authenticated | Propose a 1-to-1 swap, free claim, or purchase request |
-| `/api/exchanges/:id/accept` | `PATCH` | Owner Only | Accept request and place both items into `Reserved` state |
-| `/api/exchanges/:id/complete`| `PATCH` | Party Only | Confirm meetup handover, mark `Completed`, and grant Eco-Karma |
-| `/api/circular-swap/suggestions` | `GET` | Public | Run graph cycle engine to detect 2-way and 3-way circular loops |
-| `/api/circular-swap/propose` | `POST` | Authenticated | Propose a discovered multi-party circular trade loop |
-| `/api/circular-swap/proposals/:id/respond` | `POST` | Authenticated | Provide participant consent (`accepted` or `declined`) |
-| `/api/stats/impact` | `GET` | Public | Retrieve verified campus carbon savings, trees saved, and metrics |
-| `/api/stats/leaderboard` | `GET` | Public | Fetch student Eco-Karma rankings and reuse honors |
-| `/api/health` | `GET` | Public | Production uptime and database health status |
-
----
-
-## 🧪 Testing & Reliability
-
-The codebase features comprehensive test suites validating every layer of business logic:
-
-```powershell
-# Run the complete test suite from the server directory:
-cd server
-npm test
-```
-
-### Test Coverage Highlights:
-- **`auth.test.js`**: Hashing, JWT issuance, profile updates, and college verification.
-- **`marketplace.test.js`**: Item CRUD, ownership security (`403 Forbidden` checks), and search filters.
-- **`exchange.test.js`**: Two-phase reservation locks, duplicate prevention, and handover transitions.
-- **`circularSwap.test.js`**: Directed graph cycle detection ($A \to B \to C \to A$), consent workflows, and availability revalidation.
-- **`e2eJourneys.test.js`**: End-to-end multi-student exchange workflows and concurrency stress tests.
-- **Result:** **126 / 126 Passing Tests (0 Failures)**.
-
----
-
-## 💻 Local Development Setup
-
-### 1. Clone the Repository
+### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/Sameer7517/CodeAvengers.git
 cd CodeAvengers
 ```
 
-### 2. Start the Backend API
+---
+
+### Step 2: Configure Environment Variables
+Create a `.env` file inside the `server/` directory:
+```bash
+# server/.env
+PORT=5000
+NODE_ENV=development
+JWT_SECRET=campusloop_jwt_secret_key_2026
+CLIENT_URL=http://localhost:5173
+
+# Optional: MongoDB Atlas connection (leave empty to use built-in in-memory store)
+MONGODB_URI=
+```
+
+---
+
+### Step 3: Install Dependencies
+```bash
+# Install root, server, and client dependencies:
+npm run install:all
+```
+*(Or navigate into `server` and `client` separately and run `npm install`).*
+
+---
+
+### Step 4: Run the Application Locally
+In two separate terminals:
+
+#### Terminal 1 — Start Backend Server (Port 5000):
 ```bash
 cd server
-npm install
 npm start
 ```
-*The server will start on port `5000` (runs seamlessly with or without MongoDB).*
 
-### 3. Start the Frontend Client
-In a new terminal window:
+#### Terminal 2 — Start Frontend Client (Port 5173):
 ```bash
 cd client
-npm install
 npm run dev
 ```
-*Visit `http://localhost:5173` in your browser.*
+
+Visit the app at: **`http://localhost:5173`**
 
 ---
 
-## 👥 Hackathon Team — CodeAvengers
-
-- **Project:** CampusLoop — Collegiate Circular Exchange & Reuse Marketplace
-- **Live URL:** [https://code-avengers.vercel.app/](https://code-avengers.vercel.app/)
-- **Repository:** [https://github.com/Sameer7517/CodeAvengers](https://github.com/Sameer7517/CodeAvengers)
-- **Target Audience:** College and University Students (Engineering & Sciences)
-- **Focus:** Campus Sustainability, Circular Economy, Carbon Reduction, and Student Affordability.
+### Step 5: Run Automated Test Suites (126 Tests)
+```bash
+cd server
+npm test
+```
+All 126 assertions across authentication, marketplace, concurrency locks, and circular swap workflows will execute and validate with 0 failures.
 
 ---
-*Built with ❤️ for sustainable campus communities.*
+
+## 👥 Team Members — CodeAvengers
+
+| Team Member | Role | Key Contributions |
+| :--- | :--- | :--- |
+| **Sameer** | Full-Stack & System Architect | Circular Swap Graph Engine, Database Architecture, Deployment |
+| **Team Member 2** | Frontend & UI/UX Specialist | Responsive UI, Design System, Item Detail Views, SVG Avatar Engine |
+| **Team Member 3** | Backend & Security Engineer | JWT Auth, Safe Zone Integration, Two-Phase Handover, API Security |
+| **Team Member 4** | Algorithm & Impact Analyst | Carbon Offset LCA Model, Testing Harness (126 tests), Documentation |
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — feel free to use and adapt it for collegiate sustainability programs!
+
+---
+*Developed with 💚 by **CodeAvengers** for Campus Sustainability Hackathon 2026.*
